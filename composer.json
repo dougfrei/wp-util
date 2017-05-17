@@ -1,0 +1,19 @@
+{
+    "name": "dfrei/Fuse",
+    "description": "",
+    "license": "MIT",
+    "keywords": ["fuse"],
+    "authors": [
+        {
+            "name": "Doug Frei",
+            "email": "dougfrei@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Fuse\\": "src"
+        }
+    }
+}
