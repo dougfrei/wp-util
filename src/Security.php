@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Security {
 	public static function disable_dashboard_access_for_roles($roles) {
@@ -19,8 +19,6 @@ class Security {
 		add_action('init', function() use (&$roles) {
 			if (is_admin() && !defined('DOING_AJAX')) {
 				$cur_user = wp_get_current_user();
-
-				error_log(var_export($cur_user, true));
 
 				if (!$cur_user || !isset($cur_user->allcaps['level_'.$minimum_level]) || !$cur_user->allcaps['level_'.$minimum_level]) {
 					wp_redirect(home_url());

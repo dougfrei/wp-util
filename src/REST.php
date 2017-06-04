@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class REST {
 	/**

@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Scripts {
 	static $scripts = array();
@@ -41,7 +41,25 @@ class Scripts {
 				wp_enqueue_script($name);
 			}
 		});
-		
+
+		add_filter('script_loader_tag', function($tag, $handle) use (&$scripts) {
+			$attrs = array();
+
+			if (isset($scripts[$handle]['async']) && $scripts[$handle]['async']) {
+				$attrs[] = 'async';
+			}
+
+			if (isset($scripts[$handle]['defer']) && $scripts[$handle]['defer']) {
+				$attrs[] = 'defer';
+			}
+
+			if ($attrs) {
+				$tag = str_replace(' src', ' '.implode(' ', $attrs).' src', $tag);
+			}
+
+			return $tag;
+		}, 10, 2);
+
 		self::$hook_registered = true;
 	}
 

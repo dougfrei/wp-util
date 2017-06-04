@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class TinyMCE {
 	public static function add_formats($formats) {

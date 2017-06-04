@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil\Vendor;
 
 class GoogleMaps {
 	public static $registered_maps = array();

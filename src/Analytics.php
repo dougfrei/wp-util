@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Analytics {
 	/**
@@ -16,7 +16,7 @@ class Analytics {
 			return;
 		}
 
-		add_action('grav_gtm_head', function() use (&$gtm_id) {
+		add_action('wputil_gtm_head', function() use (&$gtm_id) {
 			?>
 			<!-- Google Tag Manager -->
 			<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -28,7 +28,7 @@ class Analytics {
 			<?php
 		});
 
-		add_action('grav_gtm_body', function() use (&$gtm_id) {
+		add_action('wputil_gtm_body', function() use (&$gtm_id) {
 			?>
 			<!-- Google Tag Manager (noscript) -->
 			<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=<?php echo esc_attr($gtm_id); ?>" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>

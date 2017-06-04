@@ -1,5 +1,5 @@
 <?php
-namespace Fuse\Dev;
+namespace WPUtil\Dev;
 
 class Image {
 	public static function local_image_redirect($remote_domain) {

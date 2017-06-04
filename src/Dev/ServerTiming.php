@@ -1,5 +1,5 @@
 <?php
-namespace Fuse\Dev;
+namespace WPUtil\Dev;
 
 class ServerTiming {
 	static private $proc = [];
@@ -11,7 +11,7 @@ class ServerTiming {
 			$items = [];
 
 			foreach ($procs as $key => $values) {
-				$display_name = $values['title'] ?? $key;
+				$display_name = isset($values['title']) ? $values['title'] : $key;
 				
 				if (!$values['time_total']) {
 					$values['time_total'] = microtime(true) - self::$proc[$key]['time_start'];

@@ -1,5 +1,5 @@
 <?php
-namespace Fuse\MenuWalker;
+namespace WPUtil\MenuWalker;
 
 class Select extends \Walker_Nav_Menu {
 

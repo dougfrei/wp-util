@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class ThemeSupport {
 	static public $support_items = [];
@@ -10,13 +10,13 @@ class ThemeSupport {
 
         if (!self::$hook_registered) {
             add_action('after_setup_theme', function() {
-                foreach (\Fuse\ThemeSupport::$support_items as $name => $params) {
+                foreach (\WPUtil\ThemeSupport::$support_items as $name => $params) {
                     if ($params) {
                         add_theme_support($name, $params);
                     } else {
                         add_theme_support($name);
                     }
-                } 
+                }
             });
 
             self::$hook_registered = true;

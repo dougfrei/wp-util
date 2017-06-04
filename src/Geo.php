@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Geo {
 	/**
@@ -42,5 +42,127 @@ class Geo {
 		}
 
 		return $angle * $earthRadius;
+	}
+
+	/**
+	 * Address to Geo Location (latitude, longitude) function
+	 *
+	 * @param  $address  (string) of Address or just ZipCode.
+	 *
+	 * NOTE: This is intended for single instances only. Google only allows a few requests per second.
+	 *
+	 * @return (object)
+	 * @author GG
+	 **/
+	public static function address_to_location($address) {
+		$address = str_replace(' ', '+', urlencode($address));
+		$details_url = 'http://maps.googleapis.com/maps/api/geocode/json?address='.$address.'&sensor=false';
+		
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $details_url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$response = json_decode(curl_exec($ch), true);
+		
+		// If Status Code is ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED or INVALID_REQUEST
+		if ($response['status'] != 'OK') {
+			return false;
+		}
+		
+		$geometry = $response['results'][0]['geometry'];
+		
+		$longitude = $geometry['location']['lng'];
+		$latitude = $geometry['location']['lat'];
+		
+		$array = (object)array(
+			'latitude' => $geometry['location']['lat'],
+			'longitude' => $geometry['location']['lng'],
+			'location_type' => $geometry['location_type'],
+		);
+		
+		return $array;
+	}
+
+	/**
+	 * Get Posts by Location function
+	 *
+	 * @param  $args  (array) of configurations to set for the function. Defaults are shown in the function.
+	 *
+	 * @return (array)
+	 * @author GG, DF
+	 *
+	 **/
+	function get_posts_by_location($args = array())
+	{
+		global $wpdb;
+		
+		// Set Defaults
+		$from_location = (!empty($args['from_location']) ? esc_sql($args['from_location']) : '98668'); // 98668 is default
+		$post_type = (!empty($args['post_type']) ? esc_sql($args['post_type']) : 'post'); // post is default
+		$latitude = (!empty($args['latitude']) ? esc_sql($args['latitude']) : 'latitude'); // latitude is default
+		$longitude = (!empty($args['longitude']) ? esc_sql($args['longitude']) : 'longitude'); // longitude is default
+		$measurement = (!empty($args['measurement']) && $args['measurement'] == 'kilometers' ? 6371 : 3959); // 3959 = miles
+		$within = (!empty($args['within']) ? esc_sql($args['within']) : 25); // 25 is default
+		$from = (!empty($args['from']) ? esc_sql($args['from']) : 0); // 0 is default
+		$limit = (!empty($args['limit']) ? esc_sql($args['limit']) : 999999); // 999999 is default
+		$meta_query = (!empty($args['meta_query'])) ? $args['meta_query'] : array();
+		
+		if(is_array($from_location))
+		{
+			if(isset($args['from_location']['latitude']))
+			{
+				$from_latitude = $args['from_location']['latitude'];
+				$from_longitude = $args['from_location']['longitude'];
+			}
+			else if(isset($args['from_location'][0]))
+			{
+				$from_latitude = $args['from_location'][0];
+				$from_longitude = $args['from_location'][1];
+			}
+		}
+		else
+		{
+			$location = self::address_to_location($from_location);
+			$from_latitude = $location['latitude'];
+			$from_longitude = $location['longitude'];
+		}
+		
+		// build select clauses
+		$select_clauses = array(
+			"{$wpdb->posts}.*",
+			"( {$measurement} * acos( cos( radians({$from_latitude}) ) * cos( radians( pm1.meta_value ) )
+		  * cos( radians( pm2.meta_value ) - radians({$from_longitude}) ) + sin( radians({$from_latitude}) )
+		  * sin( radians( pm1.meta_value ) ) ) ) AS distance",
+	  	);
+		
+		// build join clauses
+		$join_clauses = array(
+			"INNER JOIN {$wpdb->postmeta} AS pm1 ON ({$wpdb->posts}.ID = pm1.post_id AND pm1.meta_key = '{$latitude}')",
+			"INNER JOIN {$wpdb->postmeta} AS pm2 ON ({$wpdb->posts}.ID = pm2.post_id AND pm2.meta_key = '{$longitude}')"
+		);
+		
+		// build where clauses
+		$where_having_clauses = array(
+			"distance < {$within}",
+			"distance >= {$from}",
+		);
+		
+		// add meta query clauses
+		for ($i=0; $i<count($meta_query); $i++) {
+			if (!is_array($meta_query[$i]) || !isset($meta_query[$i]['key']) || !isset($meta_query[$i]['value'])) {
+				continue;
+			}
+			
+			$key = esc_sql($meta_query[$i]['key']);
+			$value = esc_sql($meta_query[$i]['value']);
+			$compare = isset($meta_query[$i]['compare']) ? esc_sql($meta_query[$i]['compare']) : '=';
+			$name = "mq{$i}";
+			$select_clauses[] = "{$name}.meta_value AS {$key}";
+			$join_clauses[] = "INNER JOIN {$wpdb->postmeta} AS {$name} ON ({$wpdb->posts}.ID = {$name}.post_id AND {$name}.meta_key = '{$key}')";
+			$where_having_clauses[] = "{$key} {$compare} {$value}";
+		}
+
+		$sql = "SELECT ".implode(', ', $select_clauses)." FROM {$wpdb->posts} ".implode(' ', $join_clauses)." WHERE post_type = '{$post_type}' AND post_status = 'publish' HAVING ".implode(' AND ', $where_having_clauses)." ORDER BY distance LIMIT {$limit}";
+	  	
+		return $wpdb->get_results($sql);
 	}
 }

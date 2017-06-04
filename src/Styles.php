@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Styles {
 	public static function enqueue_styles($styles) {

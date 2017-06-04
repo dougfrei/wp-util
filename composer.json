@@ -1,8 +1,8 @@
 {
-    "name": "dfrei/Fuse",
+    "name": "dfrei/WPUtil",
     "description": "",
     "license": "MIT",
-    "keywords": ["fuse"],
+    "keywords": ["wputil"],
     "authors": [
         {
             "name": "Doug Frei",
@@ -13,7 +13,7 @@
     "require-dev": {},
     "autoload": {
         "psr-4": {
-            "Fuse\\": "src"
+            "WPUtil\\": "src"
         }
     }
 }

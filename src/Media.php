@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Media {
 	public static function add_upload_mime_types($types) {

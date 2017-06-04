@@ -1,5 +1,5 @@
 <?php
-namespace Fuse;
+namespace WPUtil;
 
 class Admin {
 	/**
@@ -69,5 +69,22 @@ class Admin {
 		    $labels->menu_name = isset($post_labels['menu_name']) ? $post_labels['menu_name'] : $label_plural;
 		    $labels->name_admin_bar = isset($post_labels['menu_admin_bar']) ? $post_labels['menu_admin_bar'] : $label_plural;
 		});
+	}
+
+	/**
+	 * Retrieve the current post type that is being show in the admin panel.
+	 * Returns false if no post type is being shown/edited
+	 *
+	 * @return string The current post type being shown/edited
+	 */
+	public static function get_current_post_type() {
+		if (isset($_GET['post_type'])) {
+			return $_GET['post_type'];
+		}
+		$post_id = $_GET['post'] ? (int)$_GET['post'] : ($_POST['post_ID'] ? (int)$_POST['post_ID'] : 0);
+		if ($post_id) {
+			return get_post_type($post_id);
+		}
+		return false;
 	}
 }
