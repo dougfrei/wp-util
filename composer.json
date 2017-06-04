@@ -1,8 +1,9 @@
 {
-    "name": "dfrei/WPUtil",
-    "description": "",
+    "name": "dfrei/wp-util",
+    "description": "Collection of common functions and utilities for WordPress",
+    "type": "library",
     "license": "MIT",
-    "keywords": ["wputil"],
+    "keywords": ["wordpress", "utilities"],
     "authors": [
         {
             "name": "Doug Frei",
