@@ -3,7 +3,7 @@ namespace WPUtil\Vendor;
 
 class GravityForms {
 	private static $_form_choices;
-	private static $_move_scripts = array();
+	private static $_script_srcs = array();
 
     public static function get_all_forms() {
 		if (!self::$_form_choices) {
@@ -25,8 +25,8 @@ class GravityForms {
 
 	public static function move_scripts_to_footer() {
 		// add_filter('gform_init_scripts_footer', '__return_true');
-		add_filter('gform_get_form_filter', array('Grav\GravityForms', '_move_scripts_form_filter'), 10, 2);
-		add_action('wp_footer', array('Grav\GravityForms', '_move_scripts_footer_print'), 999);
+		add_filter('gform_get_form_filter', array(__CLASS__, '_move_scripts_form_filter'), 10, 2);
+		add_action('wp_footer', array(__CLASS__, '_move_scripts_footer_print'), 999);
 	}
 
 	public static function _move_scripts_form_filter($form_string, $form) {
@@ -34,8 +34,12 @@ class GravityForms {
 
 		preg_match_all("/<script\b[^>]*>([\s\S]*?)<\/script>/", $form_string, $matches);
 
-		if (isset($matches[0]) && is_array($matches[0])) {
-			self::$_move_scripts = array_merge(self::$_move_scripts, $matches[0]);
+		if (isset($matches[1]) && is_array($matches[1])) {
+			if (is_array($matches[1])) {
+				self::$_script_srcs = array_merge(self::$_script_srcs, array_values($matches[1]));
+			} else {
+				self::$_script_srcs[] = $matches[1];
+			}
 
 			return preg_replace("/<script\b[^>]*>([\s\S]*?)<\/script>/", '', $form_string);
 		}
@@ -44,10 +48,14 @@ class GravityForms {
 	}
 
 	public static function _move_scripts_footer_print() {
-		$scripts = array_unique(self::$_move_scripts);
+		$scripts = array_unique(self::$_script_srcs);
 
-		foreach ($scripts as $script) {
-			echo $script."\n";
-		}
+		?>
+		<script type="text/javascript">
+			document.addEventListener('DOMContentLoaded', function() {
+				<?php echo implode("\n\n", $scripts); ?>
+			});
+		</script>
+		<?php
 	}
 }
