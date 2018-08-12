@@ -1,8 +1,10 @@
 <?php
 namespace WPUtil\Dev;
 
-class Image {
-	public static function local_image_redirect($remote_domain) {
+abstract class Image
+{
+	public static function local_image_redirect($remote_domain)
+	{
 		// create function for the redirect as a variable so it can be used in the two filters below
 		$redirect_image = function($url) use (&$remote_domain) {
 			$parts = parse_url($url);

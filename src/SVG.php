@@ -1,16 +1,16 @@
 <?php
 namespace WPUtil;
 
-// A php class to be used with an svg sprite sheet
-class SVG {
+abstract class SVG
+{
     private static $svg_path = '';
-    private static $symbols = array();
-    private static $default_excludes = array();
+    private static $symbols = [];
+    private static $default_excludes = [];
     private static $use_handler_registered = false;
-    private static $use_icon_ids = array();
+    private static $use_icon_ids = [];
 
-
-    public static function set_default_symbols_array_exclusions($excludes) {
+    public static function set_default_symbols_array_exclusions($excludes)
+    {
         if (!is_array($excludes)) {
             return;
         }
@@ -18,17 +18,19 @@ class SVG {
         self::$default_excludes = $excludes;
     }
 
-    public static function use_symbols_file($path) {
+    public static function use_symbols_file($path)
+    {
         if (!file_exists($path)) {
             return;
         }
-        
+
         self::$svg_path = $path;
 
         libxml_use_internal_errors(true);
-        
+
         $dom = new \DOMDocument();
-        $dom->loadHTMLFile($path, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        // $dom->loadHTMLFile($path, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $dom->loadHTMLFile($path);
 
         libxml_use_internal_errors(false);
 
@@ -37,18 +39,24 @@ class SVG {
         foreach ($svgs as $svg) {
             $id = $svg->getAttribute('id');
             $viewbox = $svg->getAttribute('viewbox');
+            $preserve_aspect_ratio = $svg->getAttribute('preserveaspectratio');
             $markup = '';
 
             foreach ($svg->childNodes as $child) {
-                $markup .= $child->ownerDocument->saveHTML($child);
+                if (version_compare(PHP_VERSION, '5.3.6') >= 0) {
+                    $markup .= $child->ownerDocument->saveHTML($child);
+                } else {
+                    $markup .= $child->ownerDocument->saveXML($child);
+                }
             }
 
             if ($id && !isset(self::$symbols[$id])) {
-                self::$symbols[$id] = (object)array(
+                self::$symbols[$id] = (object)[
                     'id' => $id,
                     'viewbox' => $viewbox,
-                    'markup' => $markup
-                );
+                    'markup' => $markup,
+                    'preserveAspectRatio' => $preserve_aspect_ratio ? $preserve_aspect_ratio : ''
+                ];
             }
         }
     }
@@ -60,10 +68,11 @@ class SVG {
     *
     * @return array of key value pair for icon class and icon title
     */
-    public static function get_symbols_array($opts = array('remove_text' => 'icon-')) {
+    public static function get_symbols_array($opts = ['remove_text' => 'icon-'])
+    {
         $remove_text = isset($opts['remove_text']) ? $opts['remove_text'] : false;
         $exclude_icons = (isset($opts['exclude_icons']) && is_array($opts['exclude_icons'])) ? array_merge(self::$default_excludes, $opts['exclude_icons']) : self::$default_excludes;
-        $icon_array = array();
+        $icon_array = [];
 
         foreach (array_keys(self::$symbols) as $svg_id) {
             if (in_array($svg_id, $exclude_icons)) {
@@ -76,7 +85,7 @@ class SVG {
                 $icon_label = str_replace($remove_text, '', $icon_label);
             }
 
-            $icon_label = ucwords(str_replace(array('-', '_'), ' ', $icon_label));
+            $icon_label = ucwords(str_replace(['-', '_'], ' ', $icon_label));
 
             $icon_array[$svg_id] = $icon_label;
         }
@@ -91,7 +100,8 @@ class SVG {
     *
     * @return string the svg content
     */
-    public static function get_svg_symbol($icon, $opts = array()) {
+    public static function get_svg_symbol($icon, $opts = [])
+    {
         if (!in_array($icon, array_keys(self::$symbols))) {
             return '';
         }
@@ -99,13 +109,24 @@ class SVG {
         $class = (isset($opts['class']) && is_string($opts['class'])) ? $opts['class'] : $icon;
         $output = '';
 
+        $attributes = [
+            'class="'.$class.'"',
+            'viewBox="'.self::$symbols[$icon]->viewbox.'"'
+        ];
+
+        if (isset($opts['preserve_aspect_ratio'])) {
+            $attributes[] = 'preserveAspectRatio="'.$opts['preserve_aspect_ratio'].'"';
+        } else if (!isset($opts['preserve_aspect_ratio']) && self::$symbols[$icon]->preserveAspectRatio) {
+            $attributes[] = 'preserveAspectRatio="'.self::$symbols[$icon]->preserveAspectRatio.'"';
+        }
+
         if (isset($opts['no_use']) && $opts['no_use']) {
             // direct output
-            $output = '<svg version="1.1" class="'.$class.'" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="'.self::$symbols[$icon]->viewbox.'" xml:space="preserve">'.self::$symbols[$icon]->markup.'</svg>';
+            $output = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" xml:space="preserve" '.implode(' ', $attributes).'>'.self::$symbols[$icon]->markup.'</svg>';
         } else {
             // 'use' reference
-            $output = '<svg class="'.$class.'" viewBox="'.self::$symbols[$icon]->viewbox.'"><use xlink:href="#'.$icon.'"></use></svg>';
-            
+            $output = '<svg '.implode(' ', $attributes).'><use xlink:href="#'.$icon.'"></use></svg>';
+
             if (!in_array($icon, self::$use_icon_ids)) {
                 self::$use_icon_ids[] = $icon;
             }
@@ -116,18 +137,22 @@ class SVG {
         return $output;
     }
 
-    public static function register_use_handler() {
+    public static function register_use_handler()
+    {
         if (self::$use_handler_registered) {
             return;
         }
 
-        add_action('wp_footer', function() {
-            foreach (self::$use_icon_ids as $icon_id) {
-                echo '<svg style="display:none" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="'.self::$symbols[$icon_id]->viewbox.'" xml:space="preserve"><symbol id="'.$icon_id.'">'.self::$symbols[$icon_id]->markup.'</symbol></svg>';
-            }
-        });
+        add_action('wp_footer', ['\Grav\WP\SVG', 'svg_use_handler']);
 
         self::$use_handler_registered = true;
+    }
+
+    public static function svg_use_handler()
+    {
+        foreach (self::$use_icon_ids as $icon_id) {
+            echo '<svg style="display:none" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="'.self::$symbols[$icon_id]->viewbox.'" xml:space="preserve"><symbol id="'.$icon_id.'">'.self::$symbols[$icon_id]->markup.'</symbol></svg>';
+        }
     }
 
     /**
@@ -137,11 +162,13 @@ class SVG {
     *
     * @return will echo out the svg with the content if it was found
     */
-    public static function the_svg_symbol($icon, $opts = array()) {
+    public static function the_svg_symbol($icon, $opts = [])
+    {
         echo self::get_svg_symbol($icon, $opts);
     }
 
-    public static function get_clean_svg($filename, $opts=array()) {
+    public static function get_clean_svg($filename, $opts = [])
+    {
 		if (!file_exists($filename)) {
 			if (isset($opts['debug']) && $opts['debug']) {
 				error_log(__METHOD__." - failed to open file [{$filename}]");
@@ -150,14 +177,14 @@ class SVG {
 			return;
 		}
 
-		$content = preg_replace(array(
+		$content = preg_replace([
 			'/(<\?xml\ .*\?>)/i', // remove XML tag - causes issues with W3C validation
 			'/(<!--.*-->)/i', // remove comments
 			'/(\<title>[^\<]+\<\/title\>)/', // remove 'title' tag
 			'/(\<desc>[^\<]+\<\/desc\>)/', // remove 'desc' tag
 			'/\s\s+/', // remove 2+ sequential spaces
 			'/(\n|\r)/' // remove line breaks
-		), '', file_get_contents($filename));
+        ], '', file_get_contents($filename));
 
 		// remove 'id' attributes
 		if (isset($opts['remove_ids']) && $opts['remove_ids']) {

@@ -1,7 +1,8 @@
 <?php
 namespace WPUtil\Vendor;
 
-class GoogleMaps {
+abstract class GoogleMaps
+{
 	public static $registered_maps = array();
 	public static $api_key = '';
 	public static $script_deps = array();
@@ -10,7 +11,8 @@ class GoogleMaps {
 	public static $init_done = false;
 
 
-	public static function init($opts) {
+	public static function init($opts)
+	{
 		if (!isset($opts['api_key'])) {
 			return;
 			// throw new Exception(__CLASS__.'::'.__FUNCTION__.' - Google Maps API key must be set with "api_key" option key');
@@ -26,20 +28,23 @@ class GoogleMaps {
 		self::register_key_for_acf(self::$api_key);
 	}
 
-	public static function register_key_for_acf($key) {
+	public static function register_key_for_acf($key)
+	{
 		add_filter('acf/init', function() use (&$key) {
 			acf_update_setting('google_api_key', $key);
 		});
 	}
 
-	public static function google_map_is_used() {
+	public static function google_map_is_used()
+	{
 		return wp_script_is('google-maps', 'registered') ||
 			wp_script_is('google-maps', 'enqueued') ||
 			wp_script_is('google-maps', 'done') ||
 			wp_script_is('google-maps', 'todo');
 	}
 
-	public static function enqueue_google_maps_js_script() {
+	public static function enqueue_google_maps_js_script()
+	{
 		if (self::google_map_is_used()) {
 			return;
 		}
@@ -75,7 +80,8 @@ class GoogleMaps {
 		}, 10, 3);
 	}
 
-	public static function register_map($map_id, $opts=array(), $markers=array()) {
+	public static function register_map($map_id, $opts = array(), $markers = array())
+	{
 		if (!self::$init_done) {
 			return;
 			// throw new Exception(__CLASS__.'::'.__FUNCTION__.' - Google Maps class not initialized');

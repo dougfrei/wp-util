@@ -1,10 +1,12 @@
 <?php
 namespace WPUtil\Dev;
 
-class ServerTiming {
+abstract class ServerTiming
+{
 	static private $proc = [];
 
-	static public function init() {
+	static public function init()
+	{
 		$procs = &self::$proc;
 
 		add_action('send_headers', function() use (&$procs) {
@@ -25,7 +27,8 @@ class ServerTiming {
 		}, 9999);
 	}
 
-	static public function start($name, $title='') {
+	static public function start($name, $title = '')
+	{
 		$key = sanitize_title($name);
 
 		if (isset(self::$proc[$key])) {
@@ -39,7 +42,8 @@ class ServerTiming {
 		];
 	}
 
-	static public function stop($name) {
+	static public function stop($name)
+	{
 		$key = sanitize_title($name);
 
 		if (!isset(self::$proc[$key])) {

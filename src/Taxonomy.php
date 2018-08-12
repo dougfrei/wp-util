@@ -1,8 +1,10 @@
 <?php
 namespace WPUtil;
 
-class Taxonomy {
-	public static function register($label_single, $label_plural, $post_types, $options=array()) {
+abstract class Taxonomy
+{
+	public static function register($label_single, $label_plural, $post_types, $options = array())
+	{
 		$default_options = array(
 			'labels' => array(
 				'name' => $label_plural,
@@ -29,7 +31,8 @@ class Taxonomy {
 		});
 	}
 
-	public static function remove($slug) {
+	public static function remove($slug)
+	{
 		$slugs = is_array($slug) ? $slug : array($slug);
 
 		add_action('init', function() use (&$slugs) {

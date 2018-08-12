@@ -1,8 +1,10 @@
 <?php
 namespace WPUtil;
 
-class Plugins {
-	public static function force_activate_plugins($plugins=array()) {
+abstract class Plugins
+{
+	public static function force_activate_plugins($plugins=array())
+	{
 		if (!$plugins) {
 			return;
 		}
@@ -20,7 +22,8 @@ class Plugins {
 		});
 	}
 
-	public static function disallow_updates($plugins) {
+	public static function disallow_updates($plugins)
+	{
 		add_filter('site_transient_update_plugins', function($value) use (&$plugins) {
 			foreach ($plugins as $plugin) {
 				if (isset($value->response) && isset($value->response[$plugin])) {

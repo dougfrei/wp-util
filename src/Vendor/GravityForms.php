@@ -1,11 +1,13 @@
 <?php
 namespace WPUtil\Vendor;
 
-class GravityForms {
+abstract class GravityForms
+{
 	private static $_form_choices;
 	private static $_script_srcs = array();
 
-    public static function get_all_forms() {
+	public static function get_all_forms()
+	{
 		if (!self::$_form_choices) {
 			$form_choices = array();
 
@@ -23,13 +25,15 @@ class GravityForms {
 		return self::$_form_choices;
 	}
 
-	public static function move_scripts_to_footer() {
+	public static function move_scripts_to_footer()
+	{
 		// add_filter('gform_init_scripts_footer', '__return_true');
 		add_filter('gform_get_form_filter', array(__CLASS__, '_move_scripts_form_filter'), 10, 2);
 		add_action('wp_footer', array(__CLASS__, '_move_scripts_footer_print'), 999);
 	}
 
-	public static function _move_scripts_form_filter($form_string, $form) {
+	public static function _move_scripts_form_filter($form_string, $form)
+	{
 		$matches = array();
 
 		preg_match_all("/<script\b[^>]*>([\s\S]*?)<\/script>/", $form_string, $matches);

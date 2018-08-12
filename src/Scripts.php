@@ -1,36 +1,59 @@
 <?php
 namespace WPUtil;
 
-class Scripts {
+abstract class Scripts
+{
 	static $scripts = array();
 	static $hook_registered = false;
 
-	public static function register_hook() {
+	public static function register_hook()
+	{
 		if (self::$hook_registered) {
 			return;
 		}
 
 		$scripts = &self::$scripts;
 
+		foreach ($scripts as &$script) {
+			if (!isset($script['url'])) {
+				continue;
+			}
+
+			// calculate versions for scripts if they are local files
+			if (!isset($script['version'])) {
+				if (strpos($script['url'], get_template_directory_uri()) !== false) {
+					// If Local file then get the time of when it was modified
+					$file_path = str_replace(get_template_directory_uri(), get_template_directory(), $script['url']);
+
+					if (file_exists($file_path)) {
+						$script['version'] = filemtime($file_path);
+					}
+				} else {
+					// If the value is not set to null WordPress will use it's version number as the script version
+					$script['version'] = null;
+				}
+			}
+
+			// add a preload tag if a preload hook is specified
+			if (isset($script['preload_hook']) && $script['preload_hook']) {
+				$url = $script['url'];
+
+				if (isset($script['version'])) {
+					$url .= '?ver='.$script['version'];
+				}
+				
+				add_action($script['preload_hook'], function() use (&$url) {
+					echo '<link rel="preload" href="'.$url.'" as="script">'."\n";
+				});
+			}
+		}
+
+		// register all the scripts
 		add_action('wp_enqueue_scripts', function() use (&$scripts) {
 			foreach ($scripts as $name => $params) {
 				if (!isset($params['url'])) continue;
 				if (!isset($params['deps'])) $params['deps'] = array();
 				if (!isset($params['footer'])) $params['footer'] = true;
-
-				if (!isset($params['version'])) {
-					if (strpos($params['url'], get_template_directory_uri()) !== false) {
-						// If Local file then get the time of when it was modified
-			        	$file_path = str_replace(get_template_directory_uri(), get_template_directory(), $params['url']);
-
-			            if (file_exists($file_path)) {
-			                $params['version'] = filemtime($file_path);
-			            }
-			        } else {
-						// If the value is not set to null WordPress will use it's version number as the script version
-						$params['version'] = null;
-					}
-				}
 
 				wp_register_script($name, $params['url'], $params['deps'], $params['version'], $params['footer']);
 
@@ -42,6 +65,7 @@ class Scripts {
 			}
 		});
 
+		// add defer/async attributes if they are specified
 		add_filter('script_loader_tag', function($tag, $handle) use (&$scripts) {
 			$attrs = array();
 
@@ -63,7 +87,8 @@ class Scripts {
 		self::$hook_registered = true;
 	}
 
-	public static function enqueue_scripts($scripts) {
+	public static function enqueue_scripts($scripts)
+	{
 		self::$scripts = array_merge(self::$scripts, $scripts);
 		self::register_hook();
 	}

@@ -1,21 +1,23 @@
 <?php
 namespace WPUtil\MenuWalker;
 
-class Select extends \Walker_Nav_Menu {
-
+class Select extends \Walker_Nav_Menu
+{
 	public $indent;
 
-	public function __construct($indent='&dash;') {
+	public function __construct($indent = '&dash;')
+	{
 		$this->indent = $indent;
 	}
 
     // ignore start_lvl
-    public function start_lvl(&$output, $depth=0, $args=array()) { }
+    public function start_lvl(&$output, $depth = 0, $args = array()) {}
 
     // ignore end_lvl
-    public function end_lvl(&$output, $depth=0, $args=array()) { }
+    public function end_lvl(&$output, $depth = 0, $args = array()) {}
 
-    public function start_el(&$output, $item, $depth=0, $args=array(), $id=0) {
+	public function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0)
+	{
 
 		// add spacing to the title based on the current depth
 		if ($depth) {
@@ -32,5 +34,5 @@ class Select extends \Walker_Nav_Menu {
     }
 
     // ignore end_el
-    public function end_el(&$output, $item, $depth=0, $args=array()) {}
+    public function end_el(&$output, $item, $depth = 0, $args = array()) {}
 }

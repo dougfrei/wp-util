@@ -1,7 +1,8 @@
 <?php
 namespace WPUtil;
 
-class Admin {
+abstract class Admin
+{
 	/**
 	 * Change the label of an admin menu item and the post type labels associated with it
 	 *
@@ -15,7 +16,8 @@ class Admin {
 	 *
 	 * @author DF
 	 */
-	public static function change_menu_label($post_type, $slug, $label, $sub_menu_labels=array(), $post_labels=array()) {
+	public static function change_menu_label($post_type, $slug, $label, $sub_menu_labels=array(), $post_labels=array())
+	{
 		$label_singular = is_array($label) ? $label[0] : $label;
 		$label_plural = is_array($label) ? $label[1] : $label;
 
@@ -77,14 +79,109 @@ class Admin {
 	 *
 	 * @return string The current post type being shown/edited
 	 */
-	public static function get_current_post_type() {
+	public static function get_current_post_type()
+	{
 		if (isset($_GET['post_type'])) {
 			return $_GET['post_type'];
 		}
+
 		$post_id = $_GET['post'] ? (int)$_GET['post'] : ($_POST['post_ID'] ? (int)$_POST['post_ID'] : 0);
+
 		if ($post_id) {
 			return get_post_type($post_id);
 		}
+
 		return false;
+	}
+
+	public static function remove_taxonomy_table_columns($tax_slug, $remove_columns = array(), $priority = 10)
+	{
+		add_filter('manage_edit-'.$tax_slug.'_columns', function($columns) use (&$remove_columns) {
+			foreach ($remove_columns as $remove_column) {
+				if (isset($columns[$remove_column])) {
+					unset($columns[$remove_column]);
+				}
+			}
+		
+			return $columns;
+		}, $priority);
+	}
+
+	public static function add_taxonomy_table_columns($tax_slug, $columns = array(), $priority = 11)
+	{
+		add_filter('manage_edit-'.$tax_slug.'_columns', function($defaults) use (&$columns) {
+			foreach (array_keys($columns) as $col_name) {
+				$col_key = strtolower(preg_replace('/[^\da-z]/i', '', $col_name));
+				
+				$defaults[$col_key] = $col_name;
+			}
+
+			return $defaults;
+		}, $priority);
+
+		add_filter('manage_'.$tax_slug.'_custom_column', function($content, $column_name, $term_id) use (&$columns) {
+			foreach (array_keys($columns) as $new_col_key) {
+				if (strtolower(preg_replace('/[^\da-z]/i', '', $new_col_key)) == $column_name) {
+					$col_func = $columns[$new_col_key];
+					echo $col_func($term_id);
+				}
+			}
+
+			return $content;
+		}, 10, 3);
+	}
+
+	public static function remove_taxonomy_editor_fields($tax_slug, $remove_fields = array())
+	{
+		$classes = array();
+
+		foreach ($remove_fields as $field) {
+			$classes[] = '.term-'.$field.'-wrap';
+		}
+
+		add_action('admin_print_styles', function() use (&$classes, &$tax_slug) {
+			$current_screen = get_current_screen();
+		
+			if ($current_screen->id == 'edit-'.$tax_slug) {
+				?>
+				<style><?php echo esc_attr(implode(', ', $classes)); ?> { display:none; }</style>
+				<?php
+			}
+		}, 999);
+	}
+
+	public static function remove_table_columns($post_type, $remove_ids = array(), $priority = 10)
+	{
+		add_filter('manage_'.$post_type.'_posts_columns', function($defaults) use (&$remove_ids) {
+			foreach ($remove_ids as $remove_id) {
+				if (isset($defaults[$remove_id])) {
+					unset($defaults[$remove_id]);
+				}
+			}
+
+			return $defaults;
+		}, $priority);
+	}
+
+	public static function add_table_columns($post_type, $new_columns = array(), $priority = 11)
+	{
+		add_filter('manage_'.$post_type.'_posts_columns', function($defaults) use (&$new_columns) {
+			foreach (array_keys($new_columns) as $col_name) {
+				$col_key = strtolower(preg_replace('/[^\da-z]/i', '', $col_name));
+				
+				$defaults[$col_key] = $col_name;
+			}
+
+			return $defaults;
+		}, $priority);
+
+		add_action('manage_'.$post_type.'_posts_custom_column', function($column_name, $post_id) use (&$new_columns) {
+			foreach (array_keys($new_columns) as $new_col_key) {
+				if (strtolower(preg_replace('/[^\da-z]/i', '', $new_col_key)) == $column_name) {
+					$col_func = $new_columns[$new_col_key];
+					echo $col_func($post_id);
+				}
+			}
+		}, 10, 2);
 	}
 }

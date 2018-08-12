@@ -1,8 +1,10 @@
 <?php
 namespace WPUtil;
 
-class Arrays {
-	public static function us_states() {
+abstract class Arrays
+{
+	public static function us_states()
+	{
 		return array(
 			'AL'=>'Alabama',
 			'AK'=>'Alaska',
@@ -58,7 +60,8 @@ class Arrays {
 		);
 	}
 
-	public static function countries() {
+	public static function countries()
+	{
 		return array(
 			'AF' => 'Afghanistan',
 			'AX' => 'Aland Islands',

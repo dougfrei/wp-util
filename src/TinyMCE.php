@@ -1,9 +1,11 @@
 <?php
 namespace WPUtil;
 
-class TinyMCE {
-	public static function add_formats($formats) {
-		add_filter('tiny_mce_before_init', function($init_array) use (&$formats) {
+abstract class TinyMCE
+{
+	public static function add_formats($formats, $merge_formats = true)
+	{
+		add_filter('tiny_mce_before_init', function($init_array) use (&$formats, &$merge_formats) {
 			/*
 			* Each array child is a format with it's own settings
 			* Notice that each array has title, block, classes, and wrapper arguments
@@ -15,8 +17,16 @@ class TinyMCE {
 
 			// Insert the array, JSON ENCODED, into 'style_formats'
 			$init_array['style_formats'] = json_encode($formats);
+			$init_array['style_formats_merge'] = $merge_formats;
 
 			return $init_array;
+		});
+	}
+
+	public static function set_options($options = array())
+	{
+		add_filter('tiny_mce_before_init', function($init_array) use (&$options) {
+			return array_merge($init_array, $options);
 		});
 	}
 }

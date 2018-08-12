@@ -1,7 +1,8 @@
 <?php
 namespace WPUtil;
 
-class REST {
+abstract class REST
+{
 	/**
 	 * Disable the specified REST endpoints
 	 * @param  array  $disable_endpoints array of endpoints to disable
@@ -9,7 +10,8 @@ class REST {
 	 * @since 2017.01.11
 	 * @author DF
 	 */
-	public static function disable_endpoints($disable_endpoints=array()) {
+	public static function disable_endpoints($disable_endpoints = array())
+	{
 		add_filter('rest_endpoints', function($endpoints) use (&$disable_endpoints) {
 			foreach ($disable_endpoints as $disable_endpoint) {
 				if (isset($endpoints[$disable_endpoint])) {
@@ -27,7 +29,8 @@ class REST {
 	 * @since 2017.01.11
 	 * @author DF
 	 */
-	public static function fix_oauth_url_match_issue() {
+	public static function fix_oauth_url_match_issue()
+	{
 		add_filter('rest_oauth.check_callback', create_function('$valid,$url,$consumer', 'return true;'), 10, 3);
 	}
 
@@ -38,7 +41,8 @@ class REST {
 	 * @since 2017.02.08
 	 * @author DF
 	 */
-	public static function restrict_to_authenticated_users($minimum_user_level=0) {
+	public static function restrict_to_authenticated_users($minimum_user_level = 0)
+	{
 		add_filter('rest_authentication_errors', function($access) use (&$minimum_user_level) {
 			$cur_user = wp_get_current_user();
 
@@ -49,8 +53,9 @@ class REST {
 			return new \WP_Error('access-denied', 'REST API access denied', array('status' => rest_authorization_required_code()));
 		});
 	}
-	
-	public static function register_routes($namespace, $controllers) {
+
+	public static function register_routes($namespace, $controllers)
+	{
 		add_action('rest_api_init', function() use ($namespace, $controllers) {
 			foreach ($controllers as $url => $controller) {
 				new $controller($namespace, $url);
