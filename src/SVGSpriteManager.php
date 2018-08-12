@@ -1,5 +1,5 @@
 <?php
-namespace Grav\WP;
+namespace WPUtil;
 
 abstract class SVGSpriteManager {
 	static protected $sprites = [];
@@ -15,7 +15,7 @@ abstract class SVGSpriteManager {
 			return false;
 		}
 
-		self::$sprites[$name] = new \Grav\WP\SVGSprite($filename);
+		self::$sprites[$name] = new SVGSprite($filename);
 
 		return self::get_sprite($name);
 	}
