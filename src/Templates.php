@@ -6,6 +6,12 @@ abstract class Templates
 	public static function use_path_for_templates($path)
 	{
 		add_filter('template_include', function($template) use (&$path) {
+			$exit_condition = apply_filters('wputil_template_loader_exit_condition', false, $template);
+
+			if ($exit_condition) {
+				return $template;
+			}
+
 			if (is_page_template() && file_exists($template)) {
 				return $template;
 			}
