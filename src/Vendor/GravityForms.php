@@ -3,10 +3,16 @@ namespace WPUtil\Vendor;
 
 abstract class GravityForms
 {
-	private static $_form_choices;
-	private static $_script_srcs = array();
+	protected static $_form_choices;
+	protected static $_script_srcs = array();
 
-	public static function get_all_forms()
+	/**
+	 * Get a list of all forms in a key/value array
+	 * The form id is the key and the form title is the value
+	 *
+	 * @return array
+	 */
+	public static function get_all_forms(): array
 	{
 		if (!self::$_form_choices) {
 			$form_choices = array();
@@ -25,13 +31,26 @@ abstract class GravityForms
 		return self::$_form_choices;
 	}
 
-	public static function move_scripts_to_footer()
+	/**
+	 * Add filters and actions to move scripts to the HTML footer
+	 *
+	 * @return void
+	 */
+	public static function move_scripts_to_footer(): void
 	{
 		// add_filter('gform_init_scripts_footer', '__return_true');
 		add_filter('gform_get_form_filter', array(__CLASS__, '_move_scripts_form_filter'), 10, 2);
 		add_action('wp_footer', array(__CLASS__, '_move_scripts_footer_print'), 999);
 	}
 
+	/**
+	 * Callback for moving scripts to the HTML footer
+	 * Do not call directly
+	 *
+	 * @param string $form_string
+	 * @param object $form
+	 * @return void
+	 */
 	public static function _move_scripts_form_filter($form_string, $form)
 	{
 		$matches = array();
@@ -51,7 +70,14 @@ abstract class GravityForms
 		return $form_string;
 	}
 
-	public static function _move_scripts_footer_print() {
+	/**
+	 * Callback for moving scripts to the HTML footer
+	 * Do not call directly
+	 *
+	 * @return void
+	 */
+	public static function _move_scripts_footer_print()
+	{
 		$scripts = array_unique(self::$_script_srcs);
 
 		?>
@@ -61,5 +87,33 @@ abstract class GravityForms
 			});
 		</script>
 		<?php
+	}
+
+	/**
+	 * Wrap the inline JS that Gravity Forms outputs with an event
+	 * listener that fires after the page has been loaded.
+	 * This ensures that jQuery is available even if it has been
+	 * deferred. Without this hook, jQuery must be loaded in the
+	 * <head> and cannot be deferred.
+	 *
+	 * @return void
+	 */
+	public static function safely_output_inline_scripts(): void
+	{
+		add_filter('gform_cdata_open', function($js) {
+			if ((defined('DOING_AJAX') && DOING_AJAX) || isset($_POST['gform_ajax'])) {
+				return $js;
+			}
+
+			return "document.addEventListener('DOMContentLoaded', function() { ";
+		});
+
+		add_filter('gform_cdata_close', function($js) {
+			if ((defined('DOING_AJAX') && DOING_AJAX) || isset($_POST['gform_ajax'])) {
+				return $js;
+			}
+
+			return " });";
+		});
 	}
 }

@@ -3,52 +3,65 @@ namespace WPUtil;
 
 abstract class Social
 {
-	public static function get_share_link($site, $opts = array())
+	/**
+	 * Get a Facebook share link for the specified post
+	 *
+	 * @param integer $post_id
+	 * @return string
+	 */
+	public static function get_facebook_share_link(int $post_id): string
 	{
-		$opts['post_title'] = isset($opts['post_title']) ? $opts['post_title'] : get_the_title();
-		$opts['twitter_username'] = isset($opts['twitter_username']) ? $opts['twitter_username'] : '';
+		$permalink = get_the_permalink($post_id);
 
-		$share_link = '';
-
-		switch ($site) {
-			case 'facebook':
-				$share_link = "window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'facebookShare','width=626,height=436');return false;";
-			break;
-
-			case 'twitter':
-				$share_link = "window.open('https://twitter.com/share?text=".$opts['post_title']."&url='+encodeURIComponent(location.href)+'&via=".$opts['twitter_username']."','twitterShare','width=626,height=436');return false;";
-			break;
-
-			case 'googleplus':
-				$share_link = "window.open('https://plus.google.com/share?url='+encodeURIComponent(location.href),'googlePlusShare','width=626,height=436');return false;";
-			break;
-
-			case 'pinterest':
-				$share_link = "window.open('https://www.pinterest.com/pin/create/button/?url='+encodeURIComponent(location.href)+'&media=&description=".$opts['post_title']."','pinterestShare','width=626,height=436');return false;";
-			break;
-
-			case 'linkedin':
-				$share_link = "window.open('https://www.linkedin.com/cws/share?url='+encodeURIComponent(location.href),'linkedinShare','width=626,height=436');return false;";
-			break;
-
-			default:
-			break;
-		}
-
-		return $share_link;
+		return 'https://www.facebook.com/sharer/sharer.php?u='.urlencode($permalink);
 	}
 
-	public static function share_link($site, $twitter_screen_name = '', $post_id = 0)
+	/**
+	 * Get a Twitter share link for the specified post
+	 * Optionally include a username for the 'via' parameter
+	 *
+	 * @param integer $post_id
+	 * @param string $twitter_username
+	 * @return string
+	 */
+	public static function get_twitter_share_link(int $post_id, string $twitter_username = ''): string
 	{
-		trigger_error('Method '.__METHOD__.' will be deprecated in a future version of grav-util. Please use '.__CLASS__.'::get_share_link instead', E_USER_DEPRECATED);
-		
-		if (!$post_id) {
-			$post_id = get_the_ID();
+		$permalink = get_the_permalink($post_id);
+		$title = get_the_title($post_id);
+
+		$link = 'https://twitter.com/share?text='.urlencode($title).'&url='.urlencode($permalink);
+
+		if ($twitter_username) {
+			$link .= '&via='.urlencode($twitter_username);
 		}
 
-		return self::get_share_link($site, array(
-			'post_title' => get_the_title($post_id),
-			'twitter_username' => $twitter_screen_name
-		));
+		return $link;
+	}
+
+	/**
+	 * Get a Pinterest share link for the specified post
+	 *
+	 * @param integer $post_id
+	 * @return string
+	 */
+	public static function get_pinterest_share_link(int $post_id): string
+	{
+		$permalink = get_the_permalink($post_id);
+		$title = get_the_title($post_id);
+
+		return 'https://www.pinterest.com/pin/create/button/?url='.urlencode($permalink).'&media=&description='.urlencode($title);
+	}
+
+	/**
+	 * Get a LinkedIn share link for the specified post
+	 *
+	 * @param integer $post_id
+	 * @return string
+	 */
+	public static function get_linkedin_share_link(int $post_id): string
+	{
+		$permalink = get_the_permalink($post_id);
+
+		return 'https://www.linkedin.com/cws/share?url='.urlencode($permalink);
 	}
 }

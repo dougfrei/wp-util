@@ -3,7 +3,12 @@ namespace WPUtil;
 
 abstract class Images
 {
-	public static function use_imagick_if_available()
+	/**
+	 * Use imagick for processing images if available
+	 *
+	 * @return boolean
+	 */
+	public static function use_imagick_if_available(): bool
 	{
 		if (!class_exists('Imagick')) {
 			return false;

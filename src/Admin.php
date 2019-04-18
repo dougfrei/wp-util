@@ -13,10 +13,15 @@ abstract class Admin
 	 * @param  array  $post_labels     (optional) Array of post type label overrides - key is the label field,
 	 *                                 value is the new label (ex: 'new_item' => 'New Type Item',
 	 *                                 'not_found_in_trash' => 'Type not found in trash')
-	 *
-	 * @author DF
+	 * @return void
 	 */
-	public static function change_menu_label($post_type, $slug, $label, $sub_menu_labels=array(), $post_labels=array())
+	public static function change_menu_label(
+		string $post_type,
+		string $slug,
+		string $label,
+		array $sub_menu_labels = [],
+		array $post_labels = []
+	): void
 	{
 		$label_singular = is_array($label) ? $label[0] : $label;
 		$label_plural = is_array($label) ? $label[1] : $label;
@@ -79,7 +84,7 @@ abstract class Admin
 	 *
 	 * @return string The current post type being shown/edited
 	 */
-	public static function get_current_post_type()
+	public static function get_current_post_type(): string
 	{
 		if (isset($_GET['post_type'])) {
 			return $_GET['post_type'];
@@ -94,7 +99,15 @@ abstract class Admin
 		return false;
 	}
 
-	public static function remove_taxonomy_table_columns($tax_slug, $remove_columns = array(), $priority = 10)
+	/**
+	 * Remove a list of columns by key from a taxonomy admin page
+	 *
+	 * @param string $tax_slug
+	 * @param array $remove_columns
+	 * @param integer $priority
+	 * @return void
+	 */
+	public static function remove_taxonomy_table_columns(string $tax_slug, array $remove_columns = [], int $priority = 10): void
 	{
 		add_filter('manage_edit-'.$tax_slug.'_columns', function($columns) use (&$remove_columns) {
 			foreach ($remove_columns as $remove_column) {
@@ -107,7 +120,15 @@ abstract class Admin
 		}, $priority);
 	}
 
-	public static function add_taxonomy_table_columns($tax_slug, $columns = array(), $priority = 11)
+	/**
+	 * Add a list of columns to a taxonomy admin page
+	 *
+	 * @param string $tax_slug
+	 * @param array $columns
+	 * @param integer $priority
+	 * @return void
+	 */
+	public static function add_taxonomy_table_columns(string $tax_slug, array $columns = [], int $priority = 11): void
 	{
 		add_filter('manage_edit-'.$tax_slug.'_columns', function($defaults) use (&$columns) {
 			foreach (array_keys($columns) as $col_name) {
@@ -131,9 +152,16 @@ abstract class Admin
 		}, 10, 3);
 	}
 
-	public static function remove_taxonomy_editor_fields($tax_slug, $remove_fields = array())
+	/**
+	 * Remove (hide) a list of taxonomy editor fields
+	 *
+	 * @param string $tax_slug
+	 * @param array $remove_fields
+	 * @return void
+	 */
+	public static function remove_taxonomy_editor_fields(string $tax_slug, array $remove_fields = []): void
 	{
-		$classes = array();
+		$classes = [];
 
 		foreach ($remove_fields as $field) {
 			$classes[] = '.term-'.$field.'-wrap';
@@ -150,7 +178,15 @@ abstract class Admin
 		}, 999);
 	}
 
-	public static function remove_table_columns($post_type, $remove_ids = array(), $priority = 10)
+	/**
+	 * Remove a list of table columns by key from an admin post type page
+	 *
+	 * @param string $post_type
+	 * @param array $remove_ids
+	 * @param integer $priority
+	 * @return void
+	 */
+	public static function remove_table_columns(string $post_type, array $remove_ids = [], int $priority = 10)
 	{
 		add_filter('manage_'.$post_type.'_posts_columns', function($defaults) use (&$remove_ids) {
 			foreach ($remove_ids as $remove_id) {
@@ -163,7 +199,15 @@ abstract class Admin
 		}, $priority);
 	}
 
-	public static function add_table_columns($post_type, $new_columns = array(), $priority = 11)
+	/**
+	 * Add a list of columns to an admin post type table
+	 *
+	 * @param string $post_type
+	 * @param array $new_columns
+	 * @param integer $priority
+	 * @return void
+	 */
+	public static function add_table_columns(string $post_type, array $new_columns = [], int $priority = 11): void
 	{
 		add_filter('manage_'.$post_type.'_posts_columns', function($defaults) use (&$new_columns) {
 			foreach (array_keys($new_columns) as $col_name) {

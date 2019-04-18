@@ -3,199 +3,326 @@ namespace WPUtil;
 
 abstract class SVG
 {
-    private static $svg_path = '';
-    private static $symbols = [];
-    private static $default_excludes = [];
-    private static $use_handler_registered = false;
-    private static $use_icon_ids = [];
+	protected static $use_svgs = [];
+	protected static $use_hook_added = false;
 
-    public static function set_default_symbols_array_exclusions($excludes)
-    {
-        if (!is_array($excludes)) {
-            return;
-        }
-
-        self::$default_excludes = $excludes;
-    }
-
-    public static function use_symbols_file($path)
-    {
-        if (!file_exists($path)) {
-            return;
-        }
-
-        self::$svg_path = $path;
-
-        libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        // $dom->loadHTMLFile($path, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        $dom->loadHTMLFile($path);
-
-        libxml_use_internal_errors(false);
-
-        $svgs = $dom->getElementsByTagName('symbol');
-
-        foreach ($svgs as $svg) {
-            $id = $svg->getAttribute('id');
-            $viewbox = $svg->getAttribute('viewbox');
-            $preserve_aspect_ratio = $svg->getAttribute('preserveaspectratio');
-            $markup = '';
-
-            foreach ($svg->childNodes as $child) {
-                if (version_compare(PHP_VERSION, '5.3.6') >= 0) {
-                    $markup .= $child->ownerDocument->saveHTML($child);
-                } else {
-                    $markup .= $child->ownerDocument->saveXML($child);
-                }
-            }
-
-            if ($id && !isset(self::$symbols[$id])) {
-                self::$symbols[$id] = (object)[
-                    'id' => $id,
-                    'viewbox' => $viewbox,
-                    'markup' => $markup,
-                    'preserveAspectRatio' => $preserve_aspect_ratio ? $preserve_aspect_ratio : ''
-                ];
-            }
-        }
-    }
-
-    /**
-    * Outputs the array of SVGs from the sprite file
-    *
-    * @param none
-    *
-    * @return array of key value pair for icon class and icon title
-    */
-    public static function get_symbols_array($opts = ['remove_text' => 'icon-'])
-    {
-        $remove_text = isset($opts['remove_text']) ? $opts['remove_text'] : false;
-        $exclude_icons = (isset($opts['exclude_icons']) && is_array($opts['exclude_icons'])) ? array_merge(self::$default_excludes, $opts['exclude_icons']) : self::$default_excludes;
-        $icon_array = [];
-
-        foreach (array_keys(self::$symbols) as $svg_id) {
-            if (in_array($svg_id, $exclude_icons)) {
-                continue;
-            }
-
-            $icon_label = $svg_id;
-
-            if ($remove_text) {
-                $icon_label = str_replace($remove_text, '', $icon_label);
-            }
-
-            $icon_label = ucwords(str_replace(['-', '_'], ' ', $icon_label));
-
-            $icon_array[$svg_id] = $icon_label;
-        }
-
-        return $icon_array;
-    }
-
-    /**
-    * Returns the svg markup of a specific SVG built from the sprite file
-    *
-    * @param string $icon the icon id within the sprite file
-    *
-    * @return string the svg content
-    */
-    public static function get_svg_symbol($icon, $opts = [])
-    {
-        if (!in_array($icon, array_keys(self::$symbols))) {
-            return '';
-        }
-
-        $class = (isset($opts['class']) && is_string($opts['class'])) ? $opts['class'] : $icon;
-        $output = '';
-
-        $attributes = [
-            'class="'.$class.'"',
-            'viewBox="'.self::$symbols[$icon]->viewbox.'"'
-        ];
-
-        if (isset($opts['preserve_aspect_ratio'])) {
-            $attributes[] = 'preserveAspectRatio="'.$opts['preserve_aspect_ratio'].'"';
-        } else if (!isset($opts['preserve_aspect_ratio']) && self::$symbols[$icon]->preserveAspectRatio) {
-            $attributes[] = 'preserveAspectRatio="'.self::$symbols[$icon]->preserveAspectRatio.'"';
-        }
-
-        if (isset($opts['no_use']) && $opts['no_use']) {
-            // direct output
-            $output = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" xml:space="preserve" '.implode(' ', $attributes).'>'.self::$symbols[$icon]->markup.'</svg>';
-        } else {
-            // 'use' reference
-            $output = '<svg '.implode(' ', $attributes).'><use xlink:href="#'.$icon.'"></use></svg>';
-
-            if (!in_array($icon, self::$use_icon_ids)) {
-                self::$use_icon_ids[] = $icon;
-            }
-
-            self::register_use_handler();
-        }
-
-        return $output;
-    }
-
-    public static function register_use_handler()
-    {
-        if (self::$use_handler_registered) {
-            return;
-        }
-
-        add_action('wp_footer', ['\Grav\WP\SVG', 'svg_use_handler']);
-
-        self::$use_handler_registered = true;
-    }
-
-    public static function svg_use_handler()
-    {
-        foreach (self::$use_icon_ids as $icon_id) {
-            echo '<svg style="display:none" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="'.self::$symbols[$icon_id]->viewbox.'" xml:space="preserve"><symbol id="'.$icon_id.'">'.self::$symbols[$icon_id]->markup.'</symbol></svg>';
-        }
-    }
-
-    /**
-    * Outputs the svg markup of a specific SVG built from the sprite file
-    *
-    * @param string $icon the icon id within the sprite file
-    *
-    * @return will echo out the svg with the content if it was found
-    */
-    public static function the_svg_symbol($icon, $opts = [])
-    {
-        echo self::get_svg_symbol($icon, $opts);
-    }
-
-    public static function get_clean_svg($filename, $opts = [])
-    {
-		if (!file_exists($filename)) {
-			if (isset($opts['debug']) && $opts['debug']) {
-				error_log(__METHOD__." - failed to open file [{$filename}]");
-			}
-
-			return;
-		}
-
-		$content = preg_replace([
+	/**
+	 * Remove unnecessary items from SVG markup
+	 *
+	 * @param string $markup
+	 * @return string
+	 */
+	protected static function clean_markup(string $markup): string
+	{
+		$debug = apply_filters('wputil/svg_clean_debug', false);
+		$remove_ids = apply_filters('wputil/svg_clean_remove_ids', false);
+		$remove_matches = apply_filters('wputil/svg_clean_remove_matches', [
 			'/(<\?xml\ .*\?>)/i', // remove XML tag - causes issues with W3C validation
 			'/(<!--.*-->)/i', // remove comments
 			'/(\<title>[^\<]+\<\/title\>)/', // remove 'title' tag
 			'/(\<desc>[^\<]+\<\/desc\>)/', // remove 'desc' tag
 			'/\s\s+/', // remove 2+ sequential spaces
 			'/(\n|\r)/' // remove line breaks
-        ], '', file_get_contents($filename));
+		]);
+
+		$cleaned_markup = preg_replace($remove_matches, '', $markup);
 
 		// remove 'id' attributes
-		if (isset($opts['remove_ids']) && $opts['remove_ids']) {
-			$content = preg_replace('/(id=\"[^\"]+\")/', '', $content);
+		if ($remove_ids) {
+			$cleaned_markup = preg_replace('/(id=\"[^\"]+\")/', '', $cleaned_markup);
 		}
 
-		if (isset($opts['debug']) && $opts['debug']) {
-			error_log($filename);
-			error_log($content);
+		if ($debug) {
+			error_log($cleaned_markup);
 		}
 
-		return $content;
+		return $cleaned_markup;
+	}
+
+	/**
+	 * Get the path to SVG files. Default is <theme>/media/svg.
+	 * Can be filtered using 'wputil/svg_path'
+	 *
+	 * @return string
+	 */
+	protected static function get_svg_path(): string
+	{
+		$svg_path = apply_filters('wputil/svg_path', get_template_directory().'/media/svg/');
+		
+		return trailingslashit($svg_path);
+	}
+
+	/**
+	 * Get the filename for an SVG name
+	 * Ex: 'play' will return '<theme>/media/svg/play.svg'
+	 *
+	 * @param string $svg_name
+	 * @return string
+	 */
+	protected static function get_svg_filename(string $svg_name): string
+	{
+		$svg_path = self::get_svg_path();
+
+		return $svg_path.$svg_name.'.svg';
+	}
+
+	/**
+	 * Directly output SVG markup by SVG name
+	 * Optional arguments:
+	 *     'no_use' (boolean)
+	 *         - if specified, no 'use' tag will be created for the markup
+	 *     'class' (string)
+	 *         - add a class to the markup container
+	 *
+	 * @param string $svg_name
+	 * @param array $opts
+	 * @return void
+	 */
+	public static function the_svg(string $svg_name, array $opts = []): void
+	{
+		echo self::get_svg($svg_name, $opts);
+	}
+
+	/**
+	 * Get SVG markup by SVG name
+	 * Optional arguments:
+	 *     'no_use' (boolean) [default: false]
+	 *         - if specified, no 'use' tag will be created for the markup
+	 *     'class' (string)
+	 *         - add a class to the markup container
+	 *
+	 * @param string $svg_name
+	 * @param array $opts
+	 * @return string
+	 */
+	public static function get_svg(string $svg_name, array $opts = []): string
+	{
+		$no_use = $opts['no_use'] ?? false;
+
+		// return the file contents directly if this SVG won't be
+		// setup as a "use" reference
+		return $no_use ?
+			self::direct_output($svg_name, $opts) :
+			self::create_use_reference($svg_name, $opts);
+	}
+
+	/**
+	 * Return SVG markup for use in direct output with no 'use' reference created
+	 * This method is used by the_svg/get_svg and should not be called directly
+	 * Optional arguments:
+	 *     'class' (string)
+	 *         - add a class to the markup container
+	 *
+	 * @param string $svg_name
+	 * @param array $opts
+	 * @return string
+	 */
+	protected static function direct_output(string $svg_name, array $opts = []): string
+	{
+		$filename = self::get_svg_filename($svg_name);
+
+		if (!file_exists($filename)) {
+			return '';
+		}
+
+		$dom = self::get_svg_domdocument($filename);
+
+		$svg_node = $dom->documentElement;
+		
+		$add_class = $opts['class'] ?? '';
+
+		if ($add_class) {
+			$class_attr = $svg_node->getAttribute('class');
+			$class_attr = $class_attr ? $class_attr.' '.$add_class : $add_class;
+			$svg_node->setAttribute('class', $class_attr);
+		}
+
+		return $dom->saveHTML();
+	}
+
+	/**
+	 * Return a 'use' reference for SVG markup
+	 * This method is used by the_svg/get_svg and should not be called directly
+	 * Optional arguments:
+	 *     'class' (string)
+	 *         - add a class to the markup container
+	 *
+	 * @param string $svg_name
+	 * @param array $opts
+	 * @return string
+	 */
+	protected static function create_use_reference(string $svg_name, array $opts = []): string
+	{
+		// add the wp_footer hook if needed
+		if (!self::$use_hook_added) {
+			add_action('wp_footer', [__CLASS__, 'use_reference_hook']);
+			self::$use_hook_added = true;
+		}
+
+		if (!isset(self::$use_svgs[$svg_name])) {
+			$filename = self::get_svg_filename($svg_name);
+
+			if (!$filename) {
+				return '';
+			}
+
+			$attrs = [];
+			$dom = self::get_svg_domdocument($filename);
+			$svg_node = $dom->documentElement;
+
+			if ($svg_node->hasAttributes()) {
+				foreach ($svg_node->attributes as $node_attr) {
+					$attrs[$node_attr->nodeName] = $node_attr->nodeValue;
+				}
+			}
+
+			// set attribute defaults if needed
+			$attrs['version'] = $attrs['version'] ?? '1.1';
+			$attrs['xmlns'] = $attrs['xmlns'] ?? 'http://www.w3.org/2000/svg';
+			$attrs['xmlns:xlink'] = $attrs['xmlns:xlink'] ?? 'http://www.w3.org/1999/xlink';
+			$attrs['xml:space'] = $attrs['xml:space'] ?? 'preserve';
+			$attrs['x'] = $attrs['x'] ?? '0px';
+			$attrs['y'] = $attrs['y'] ?? '0px';
+			
+			// create markup from child nodes
+			$markup = '';
+
+			foreach ($svg_node->childNodes as $child) {
+				$markup .= $child->ownerDocument->saveHTML($child);
+			}
+
+			// add to the reference array
+			self::$use_svgs[$svg_name] = [
+				'attributes' => $attrs,
+				'markup' => $markup
+			];
+		}
+
+		$attrs = self::$use_svgs[$svg_name]['attributes'];
+		$add_class = $opts['class'] ?? '';
+
+		if ($add_class) {
+			$attrs['class'] = isset($attrs['class']) ? $attrs['class'].' '.$add_class : $add_class;
+		}
+
+		$attrs_str = self::create_attributes_string($attrs);
+		$safe_id = self::get_safe_id_value($svg_name);
+
+		return "<svg {$attrs_str}><use xlink:href=\"#{$safe_id}\"></use></svg>";
+	}
+
+	/**
+	 * Internal callback function used to output SVG markup for all 'use' references
+	 * Do not call directly
+	 *
+	 * @return void
+	 */
+	public static function use_reference_hook(): void
+	{
+		foreach (self::$use_svgs as $svg_name => $svg_data) {
+			$attrs_str = self::create_attributes_string($svg_data['attributes']);
+			$safe_id = self::get_safe_id_value($svg_name);
+
+			?>
+			<svg style="display:none" <?php echo $attrs_str; ?>>
+				<symbol id="<?php echo $safe_id; ?>">
+					<?php echo $svg_data['markup']; ?>
+				</symbol>
+			</svg>
+			<?php
+		}
+	}
+
+	/**
+	 * Return a DOMDocument object for an SVG file
+	 *
+	 * @param string $filename
+	 * @return \DOMDocument
+	 */
+	protected static function get_svg_domdocument(string $filename): \DOMDocument
+	{
+		$clean_markup = self::clean_markup(file_get_contents($filename));
+
+		libxml_use_internal_errors(true);
+
+		$dom = new \DOMDocument();
+		$dom->loadHTML($clean_markup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+		libxml_use_internal_errors(false);
+
+		return $dom;
+	}
+
+	/**
+	 * Create an HTML attributes string from a key/value array
+	 *
+	 * @param array $attrs
+	 * @return string
+	 */
+	protected static function create_attributes_string(array $attrs = []): string
+	{
+		$attrs_parts = [];
+
+		foreach ($attrs as $attr_name => $attr_value) {
+			$attrs_parts[] = "{$attr_name}=\"{$attr_value}\"";
+		}
+
+		return implode(' ', $attrs_parts);
+	}
+
+	/**
+	 * Create a safe 'id' attribute value from a string
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	protected static function get_safe_id_value(string $value): string
+	{
+		return sanitize_title($value);
+	}
+
+	/**
+	 * Get a list of available SVG files
+	 * Each item in the returned array will include 'label' and 'name' keys
+	 * Options:
+	 *     'label_includes_dir' (boolean) [default: true]
+	 *         - when false, the label value will not include the directory
+	 *
+	 * @param string $sub_dir
+	 * @param array $opts
+	 * @return array
+	 */
+	public static function get_svg_list(string $sub_dir = '', array $opts = []): array
+	{
+		$label_includes_dir = $opts['label_includes_dir'] ?? true;
+		$svg_list = [];
+		$svg_base_path = self::get_svg_path();
+		$svg_path = $svg_base_path;
+
+		if ($sub_dir) {
+			$svg_path = trailingslashit($svg_path.$sub_dir);
+		}
+
+		$dir_iterator = new \RecursiveDirectoryIterator($svg_path, \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO);
+		$iterator = new \RecursiveIteratorIterator($dir_iterator, \RecursiveIteratorIterator::SELF_FIRST);
+
+		foreach ($iterator as $file) {
+			if (stripos($file, '.svg') === false) {
+				continue;
+			}
+
+			$svg_name = str_replace($svg_base_path, '', $file);
+			$label = $label_includes_dir ? str_replace('.svg', '', $svg_name) : basename($svg_name, '.svg');
+			$label = str_replace('/', ' / ', $label);
+			$label = str_replace(['-', '_'], ' ', $label);
+			$label = ucwords($label);
+
+			$svg_list[] = [
+				'label' => $label,
+				'name' => str_replace('.svg', '', $svg_name)
+			];
+		}
+
+		return $svg_list;
 	}
 }

@@ -3,66 +3,78 @@ namespace WPUtil;
 
 abstract class Arrays
 {
-	public static function us_states()
+	/**
+	 * Return an array of US states with the abbreviation as the key
+	 * and the name as the value
+	 *
+	 * @return array
+	 */
+	public static function us_states(): array
 	{
-		return array(
-			'AL'=>'Alabama',
-			'AK'=>'Alaska',
-			'AZ'=>'Arizona',
-			'AR'=>'Arkansas',
-			'CA'=>'California',
-			'CO'=>'Colorado',
-			'CT'=>'Connecticut',
-			'DE'=>'Delaware',
-			'DC'=>'District Of Columbia',
-			'FL'=>'Florida',
-			'GA'=>'Georgia',
-			'HI'=>'Hawaii',
-			'ID'=>'Idaho',
-			'IL'=>'Illinois',
-			'IN'=>'Indiana',
-			'IA'=>'Iowa',
-			'KS'=>'Kansas',
-			'KY'=>'Kentucky',
-			'LA'=>'Louisiana',
-			'ME'=>'Maine',
-			'MD'=>'Maryland',
-			'MA'=>'Massachusetts',
-			'MI'=>'Michigan',
-			'MN'=>'Minnesota',
-			'MS'=>'Mississippi',
-			'MO'=>'Missouri',
-			'MT'=>'Montana',
-			'NE'=>'Nebraska',
-			'NV'=>'Nevada',
-			'NH'=>'New Hampshire',
-			'NJ'=>'New Jersey',
-			'NM'=>'New Mexico',
-			'NY'=>'New York',
-			'NC'=>'North Carolina',
-			'ND'=>'North Dakota',
-			'OH'=>'Ohio',
-			'OK'=>'Oklahoma',
-			'OR'=>'Oregon',
-			'PA'=>'Pennsylvania',
-			'RI'=>'Rhode Island',
-			'SC'=>'South Carolina',
-			'SD'=>'South Dakota',
-			'TN'=>'Tennessee',
-			'TX'=>'Texas',
-			'UT'=>'Utah',
-			'VT'=>'Vermont',
-			'VA'=>'Virginia',
-			'WA'=>'Washington',
-			'WV'=>'West Virginia',
-			'WI'=>'Wisconsin',
-			'WY'=>'Wyoming'
-		);
+		return [
+			'AL' => 'Alabama',
+			'AK' => 'Alaska',
+			'AZ' => 'Arizona',
+			'AR' => 'Arkansas',
+			'CA' => 'California',
+			'CO' => 'Colorado',
+			'CT' => 'Connecticut',
+			'DE' => 'Delaware',
+			'DC' => 'District Of Columbia',
+			'FL' => 'Florida',
+			'GA' => 'Georgia',
+			'HI' => 'Hawaii',
+			'ID' => 'Idaho',
+			'IL' => 'Illinois',
+			'IN' => 'Indiana',
+			'IA' => 'Iowa',
+			'KS' => 'Kansas',
+			'KY' => 'Kentucky',
+			'LA' => 'Louisiana',
+			'ME' => 'Maine',
+			'MD' => 'Maryland',
+			'MA' => 'Massachusetts',
+			'MI' => 'Michigan',
+			'MN' => 'Minnesota',
+			'MS' => 'Mississippi',
+			'MO' => 'Missouri',
+			'MT' => 'Montana',
+			'NE' => 'Nebraska',
+			'NV' => 'Nevada',
+			'NH' => 'New Hampshire',
+			'NJ' => 'New Jersey',
+			'NM' => 'New Mexico',
+			'NY' => 'New York',
+			'NC' => 'North Carolina',
+			'ND' => 'North Dakota',
+			'OH' => 'Ohio',
+			'OK' => 'Oklahoma',
+			'OR' => 'Oregon',
+			'PA' => 'Pennsylvania',
+			'RI' => 'Rhode Island',
+			'SC' => 'South Carolina',
+			'SD' => 'South Dakota',
+			'TN' => 'Tennessee',
+			'TX' => 'Texas',
+			'UT' => 'Utah',
+			'VT' => 'Vermont',
+			'VA' => 'Virginia',
+			'WA' => 'Washington',
+			'WV' => 'West Virginia',
+			'WI' => 'Wisconsin',
+			'WY' => 'Wyoming'
+		];
 	}
 
-	public static function countries()
+	/**
+	 * Return an array of countries with the abbreviation as the key
+	 * and the name as the value
+	 *
+	 * @return array
+	 */
+	public static function countries(): array
 	{
-		return array(
+		return [
 			'AF' => 'Afghanistan',
 			'AX' => 'Aland Islands',
 			'AL' => 'Albania',
@@ -309,25 +321,31 @@ abstract class Arrays
 			'YE' => 'Yemen',
 			'ZM' => 'Zambia',
 			'ZW' => 'Zimbabwe'
-		);
+		];
 	}
-    
-	public static function canadian_provinces()
+	
+	/**
+	 * Return an array of Canadian provinces with the abbreviation as the key
+	 * and the name as the value
+	 *
+	 * @return array
+	 */
+	public static function canadian_provinces(): array
 	{
-		return array(
-		    'BC'=>'British Columbia',
-		    'ON'=>'Ontario',
-		    'NL'=>'Newfoundland and Labrador',
-		    'NS'=>'Nova Scotia',
-		    'PE'=>'Prince Edward Island',
-		    'NB'=>'New Brunswick',
-		    'QC'=>'Quebec',
-		    'MB'=>'Manitoba',
-		    'SK'=>'Saskatchewan',
-		    'AB'=>'Alberta',
-		    'NT'=>'Northwest Territories',
-		    'NU'=>'Nunavut',
-		    'YT'=>'Yukon Territory'
-		);
+		return [
+		    'BC' => 'British Columbia',
+		    'ON' => 'Ontario',
+		    'NL' => 'Newfoundland and Labrador',
+		    'NS' => 'Nova Scotia',
+		    'PE' => 'Prince Edward Island',
+		    'NB' => 'New Brunswick',
+		    'QC' => 'Quebec',
+		    'MB' => 'Manitoba',
+		    'SK' => 'Saskatchewan',
+		    'AB' => 'Alberta',
+		    'NT' => 'Northwest Territories',
+		    'NU' => 'Nunavut',
+		    'YT' => 'Yukon Territory'
+		];
 	}
 }

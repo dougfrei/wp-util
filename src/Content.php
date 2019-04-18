@@ -3,7 +3,23 @@ namespace WPUtil;
 
 abstract class Content
 {
-	public static function get_related_posts($object_id=0, $opts = [])
+	/**
+	 * Get related posts by matching in the following order:
+	 *     - matches all same taxonomy terms
+	 *     - matches any same taxonomy term
+	 * 
+	 * If not enough posts are found the remainder of the requested amount
+	 * will be filled out using the most recent posts
+	 * 
+	 * Options:
+	 *     'post_type' - post type to request (defaults to post type of object_id)
+	 *     'num_posts' - number of posts returned (default is 4)
+	 *
+	 * @param integer $object_id
+	 * @param array $opts
+	 * @return array
+	 */
+	public static function get_related_posts($object_id = 0, $opts = []): array
 	{
 		// No object id? Use the current post.
 		if (!$object_id) {
@@ -73,7 +89,7 @@ abstract class Content
 		$exclude_ids = array_merge([$object_id], $add_exclude_ids);
 
 		$match_some_posts = get_posts(array_merge($base_args, [
-			'posts_per_page' => $opts['num_posts']-count($return_posts),
+			'posts_per_page' => $opts['num_posts'] - count($return_posts),
 			'tax_query' => array_merge(['relation' => 'OR'], $tax_queries),
 			'post__not_in' => $exclude_ids
 		]));
@@ -89,7 +105,7 @@ abstract class Content
 		$exclude_ids = array_merge([$object_id], $add_exclude_ids);
 
 		$most_recent_posts = get_posts(array_merge($base_args, [
-			'posts_per_page' => $opts['num_posts']-count($return_posts),
+			'posts_per_page' => $opts['num_posts'] - count($return_posts),
 			'post__not_in' => $exclude_ids
 		]));
 
@@ -98,7 +114,25 @@ abstract class Content
 		return $return_posts;
 	}
 
-	public static function get_excerpt($opts = [])
+	/**
+	 * Get the excerpt for a post with various options
+	 * 
+	 * Options:
+	 *     'content' (string) - directly specify the content to return
+	 *     'full_content' (bool) - return the full content (default: false)
+	 *     'wpautop' (bool) - apply 'wpautop' to the content (default: false)
+	 *     'strip_tags' (bool) - strip HTML tags on the content (default: true)
+	 *     'strip_shortcodes' (bool) - strip shortcodes from the content (default: true)
+	 *     'prefer_excerpt' (bool) - prioritize the 'excerpt' field (default: false)
+	 *     'length' (int) - control the length of the excerpt (default: 55)
+	 *     'more' (string) - customize the 'read more' text (default: '&hellip;')
+	 *     'filter_nbsp' (bool) - filter '&nbsp;' sequences from the content (default: true)
+	 *     'post_id' (int) - manually specify the post id (default is current post)
+	 *
+	 * @param array $opts
+	 * @return string
+	 */
+	public static function get_excerpt($opts = []): string
 	{
 		// options and variables
 		$content = $opts['content'] ?? '';
@@ -171,7 +205,15 @@ abstract class Content
 		return trim($content);
 	}
 
-	public static function filter_p_tags_on_images()
+	/**
+	 * Remove <p> tags from around images using the following filters:
+	 *     - the_content
+	 *     - the_excerpt
+	 *     - acf/format_value/type=wysiwyg
+	 *
+	 * @return void
+	 */
+	public static function filter_p_tags_on_images(): void
 	{
 		$process_func = function($content) {
 			$content = preg_replace('/<p>\s*(<a .*>)?\s*(<img .* \/>)\s*(<\/a>)?\s*<\/p>/iU', '\1\2\3', $content);

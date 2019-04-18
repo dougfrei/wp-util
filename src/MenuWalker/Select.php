@@ -1,6 +1,9 @@
 <?php
 namespace WPUtil\MenuWalker;
 
+/**
+ * Walker_Nav_Menu that outputs menu items in a <select> control
+ */
 class Select extends \Walker_Nav_Menu
 {
 	public $indent;

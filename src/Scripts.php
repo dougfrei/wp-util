@@ -3,10 +3,16 @@ namespace WPUtil;
 
 abstract class Scripts
 {
-	static $scripts = array();
+	static $scripts = [];
 	static $hook_registered = false;
 
-	public static function register_hook()
+	/**
+	 * Internal callback hook for registering/enqueuing scripts
+	 * Do not call directly
+	 *
+	 * @return void
+	 */
+	public static function register_hook(): void
 	{
 		if (self::$hook_registered) {
 			return;
@@ -87,7 +93,25 @@ abstract class Scripts
 		self::$hook_registered = true;
 	}
 
-	public static function enqueue_scripts($scripts)
+	/**
+	 * Enqueue an array of scripts
+	 * Each item can have the following keys:
+	 *     'version' (string) - version for the style enqueue
+	 *     'url' (string) - URL of the CSS file to enqueue
+	 *     'deps' (array) - List of style handles that this enqueue depends on
+	 *     'footer' (bool) - Load the script during the 'wp_footer' function
+	 *     'async' (bool) - Add the 'async' attribute to the script tag
+	 *     'defer' (bool) - Add the 'defer' attribute to the script tag
+	 *     'localize' (array) - An array with 'name' and 'data' keys used to localize
+	 *         the script by printing inline JS after the script tag has been output.
+	 *         The 'data' value will be encoded as JSON.
+	 *     'preload_hook' (string) - An optional action hook name that will be used
+	 *         to output a '<link rel="preload" href="..." as="script">' tag
+	 *
+	 * @param array $scripts
+	 * @return void
+	 */
+	public static function enqueue_scripts(array $scripts): void
 	{
 		self::$scripts = array_merge(self::$scripts, $scripts);
 		self::register_hook();

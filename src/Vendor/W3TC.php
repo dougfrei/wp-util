@@ -35,43 +35,74 @@ namespace WPUtil\Vendor;
 
 abstract class W3TC
 {
-	private static $w3tc_config = false;
+	protected static $w3tc_config = null;
 
-	private static function get_config() {
+	/**
+	 * Get the W3TC config class
+	 * Returns a W3TC\Config class on success and null on failure
+	 *
+	 * @return mixed
+	 */
+	protected static function get_config()
+	{
 		// check to see if Config object already exists
 		if (self::$w3tc_config) {
-			return false;
+			return self::$w3tc_config;
 		}
 
 		if (defined('WP_INSTALLING') && WP_INSTALLING) {
-			return false;
+			self::$w3tc_config = null;
+			return null;
 		}
 
 		$api_file = ABSPATH . 'wp-content/plugins/w3-total-cache/w3-total-cache-api.php';
 
 		if (!file_exists($api_file)) {
-			return false;
+			self::$w3tc_config = null;
+			return null;
 		}
 
 		require_once($api_file);
 
-		return \W3TC\Dispatcher::config();
+		self::$w3tc_config = \W3TC\Dispatcher::config();
+
+		return self::$w3tc_config;
 	}
 
-	public static function set_values($values) {
+	/**
+	 * Set W3TC configuration values using a key/value pair array
+	 *
+	 * @param array $values
+	 * @return boolean
+	 */
+	public static function set_values(array $values): bool
+	{
 		// do we have a valid config object?
-		if (!self::$w3tc_config) {
-			if (!self::$w3tc_config = self::get_config()) {
-				return false;
-			}
+		$w3tc_config = self::get_config();
+
+		if ($w3tc_config === null) {
+			return false;
 		}
 
 		foreach ($values as $key => $val) {
 			self::$w3tc_config->set($key, $val);
 		}
+
+		return true;
 	}
 
-	public static function lock_settings_page($message = 'The settings for W3 Total Cache have been locked.') {
+	/**
+	 * Restrict access to the W3TC settings page with an optional message
+	 *
+	 * @param string $message
+	 * @return void
+	 */
+	public static function lock_settings_page($message = ''): void
+	{
+		if (!$message) {
+			$message = 'The settings for W3 Total Cache have been locked.';
+		}
+
 		add_action('admin_init', function() use (&$message) {
 			if (isset($_GET['page']) && strpos($_GET['page'], 'w3tc_') !== false && $_GET['page'] != 'w3tc_dashboard') {
 				echo $message.' <br><br><a href="javascript:history.go(-1);">< Back</a>';

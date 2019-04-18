@@ -3,67 +3,47 @@ namespace WPUtil;
 
 abstract class Menus
 {
-	public static function get_menus()
+	/**
+	 * Return a key/value list of currently registered menus
+	 * Key will be the menu id, value will be the menu name
+	 *
+	 * @return array
+	 */
+	public static function get_menus(): array
 	{
-		$menus = array();
+		$menus = [];
 
-		foreach(get_terms('nav_menu') as $menu) {
+		foreach (get_terms('nav_menu') as $menu) {
 			$menus[$menu->term_id] = $menu->name;
 		}
 
 		return $menus;
 	}
 
-	public static function get_locations()
+	/**
+	 * Wrapper for 'get_registered_nav_menus'
+	 *
+	 * @return array
+	 */
+	public static function get_locations(): array
 	{
 		return get_registered_nav_menus();
 	}
 
-	public static function display_for_location($theme_location, $opts = array())
+	/**
+	 * Call 'wp_nav_menu' for a specific location
+	 *
+	 * @param string $theme_location
+	 * @param array $opts
+	 * @return void
+	 */
+	public static function display_for_location(string $theme_location, $opts = []): void
 	{
-		$menu_opts = array_merge(array(
+		$menu_opts = array_merge([
 			'theme_location' => $theme_location,
 			'container' => ''
-		), $opts);
+		], $opts);
 
 		wp_nav_menu($menu_opts);
-	}
-
-	public static function create_default_menus($menus)
-	{
-		add_action('after_setup_theme', function() use (&$menus) {
-			$menu_locations = get_theme_mod('nav_menu_locations');
-			
-			if (empty($menu_locations)){
-				$menu_locations = array();
-			}
-	
-			$updated_menus = false;
-	
-			foreach ($menus as $menu_slug => $menu_title) {
-				if (!in_array($menu_slug, array_keys(get_registered_nav_menus()))) {
-					$menu_id = wp_create_nav_menu($menu_slug);
-
-					if (is_wp_error($menu_id)) {
-						continue;
-					}
-					
-					$menu_locations[$menu_slug] = $menu_id;
-					
-					wp_update_nav_menu_item($menu_id, 0, array(
-						'menu-item-title' =>  __('Home'),
-						'menu-item-classes' => 'home',
-						'menu-item-url' => '/',
-						'menu-item-status' => 'publish'
-					));
-	
-					$updated_menus = true;
-				}
-			}
-	
-			if ($updated_menus) {
-				set_theme_mod('nav_menu_locations', $menu_locations);
-			}
-		});
 	}
 }

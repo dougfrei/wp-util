@@ -15,7 +15,14 @@ abstract class Geo
 	 * @param  boolean $vincenty_formula optionally use the vincenty formula for calculation (default is the haversine formula)
 	 * @return float                     distance between the two points in the specified format
 	 */
-	public static function distance_between_points($fromLat, $fromLng, $toLat, $toLng, $format = 'mi', $vincenty_formula = false)
+	public static function distance_between_points(
+		float $fromLat,
+		float $fromLng,
+		float $toLat,
+		float $toLng,
+		string $format = 'mi',
+		bool $vincenty_formula = false
+	): float
 	{
 		// convert from degrees to radians
 		$fromLat = deg2rad($fromLat);
@@ -43,24 +50,28 @@ abstract class Geo
 	}
 
 	/**
-	 * Address to Geo Location (latitude, longitude) function
+	 * Get the latitude/longitude values for an address
+	 * Uses the Google Maps API and is intended for single requests to avoid rate limiting
 	 *
-	 * @param  $address  (string) of Address or just ZipCode.
-	 *
-	 * NOTE: This is intended for single instances only. Google only allows a few requests per second.
-	 *
-	 * @return (object)
-	 * @author GG
-	 **/
-	public static function address_to_location($address, $key = '')
+	 * @param string $address
+	 * @param string $gmaps_api_key
+	 * @return object
+	 */
+	public static function address_to_location(string $address, string $gmaps_api_key = ''): object
 	{
+		$ret_obj = (object)[
+			'latitude' => 0,
+			'longitude' => 0,
+			'location_type' => '',
+		];
+
 		$query_parts = array(
 			'address='.str_replace(' ', '+', urlencode($address)),
 			'sensor=false'
 		);
 
-		if ($key) {
-			$query_parts[] = 'key='.$key;
+		if ($gmaps_api_key) {
+			$query_parts[] = 'key='.$gmaps_api_key;
 		}
 
 		$details_url = 'https://maps.googleapis.com/maps/api/geocode/json?'.implode('&', $query_parts);
@@ -68,50 +79,53 @@ abstract class Geo
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $details_url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
 		$response = json_decode(curl_exec($ch), true);
 
 		// If Status Code is ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED or INVALID_REQUEST
-		if ($response['status'] != 'OK') {
-			return false;
+		if ($response['status'] !== 'OK') {
+			return $ret_obj;
 		}
 
 		$geometry = $response['results'][0]['geometry'];
 
-		$longitude = $geometry['location']['lng'];
-		$latitude = $geometry['location']['lat'];
+		$ret_obj->latitude = $geometry['location']['lat'];
+		$ret_obj->longitude = $geometry['location']['lng'];
+		$ret_obj->location_type = $geometry['location_type'];
 
-		$array = (object)array(
-			'latitude' => $geometry['location']['lat'],
-			'longitude' => $geometry['location']['lng'],
-			'location_type' => $geometry['location_type'],
-		);
-
-		return $array;
+		return $ret_obj;
 	}
 
 	/**
-	 * Get Posts by Location function
+	 * Get posts that match specific location parameters
+	 * Argument keys:
+	 *     'from_location' - can be an array with 'latitude' and 'longitude' keys or a string (default is '98668)
+	 *     'post_type' - specify the post type (default is 'post')
+	 *     'latitude' - name of the DB table latitude key (default is 'latitude')
+	 *     'longitude' - name of the DB table longitude key (default is 'longitude')
+	 *     'measurement' - can be 'miles' or 'kilometers' (defaults to 'miles')
+	 *     'within' - the range of results included in miles/kilometers (defaults to 25)
+	 *     'from' - minimum distance in miles/kilometers from the source (defaults to 0)
+	 *     'limit' - limit the amount of results returned (default is 999999)
+	 *     'meta_query' - include array of items having key/value/compare keys as meta query clauses
 	 *
-	 * @param  $args  (array) of configurations to set for the function. Defaults are shown in the function.
-	 *
-	 * @return (array)
-	 * @author GG, DF
-	 *
-	 **/
-	public static function get_posts_by_location($args = array())
+	 * @param array $args
+	 * @return array
+	 */
+	public static function get_posts_by_location($args = []): array
 	{
 		global $wpdb;
 
 		// Set Defaults
-		$from_location = (!empty($args['from_location']) ? esc_sql($args['from_location']) : '98668'); // 98668 is default
-		$post_type = (!empty($args['post_type']) ? esc_sql($args['post_type']) : 'post'); // post is default
-		$latitude = (!empty($args['latitude']) ? esc_sql($args['latitude']) : 'latitude'); // latitude is default
-		$longitude = (!empty($args['longitude']) ? esc_sql($args['longitude']) : 'longitude'); // longitude is default
-		$measurement = (!empty($args['measurement']) && $args['measurement'] == 'kilometers' ? 6371 : 3959); // 3959 = miles
-		$within = (!empty($args['within']) ? esc_sql($args['within']) : 25); // 25 is default
-		$from = (!empty($args['from']) ? esc_sql($args['from']) : 0); // 0 is default
-		$limit = (!empty($args['limit']) ? esc_sql($args['limit']) : 999999); // 999999 is default
-		$meta_query = (!empty($args['meta_query'])) ? $args['meta_query'] : array();
+		$from_location = (!empty($args['from_location']) ? esc_sql($args['from_location']) : '98668');
+		$post_type = (!empty($args['post_type']) ? esc_sql($args['post_type']) : 'post');
+		$latitude = (!empty($args['latitude']) ? esc_sql($args['latitude']) : 'latitude');
+		$longitude = (!empty($args['longitude']) ? esc_sql($args['longitude']) : 'longitude');
+		$measurement = (!empty($args['measurement']) && $args['measurement'] == 'kilometers' ? 6371 : 3959);
+		$within = (!empty($args['within']) ? esc_sql($args['within']) : 25);
+		$from = (!empty($args['from']) ? esc_sql($args['from']) : 0);
+		$limit = (!empty($args['limit']) ? esc_sql($args['limit']) : 999999);
+		$meta_query = (!empty($args['meta_query'])) ? $args['meta_query'] : [];
 
 		if (is_array($from_location)) {
 			if (isset($args['from_location']['latitude'])) {
@@ -148,7 +162,7 @@ abstract class Geo
 		);
 
 		// add meta query clauses
-		for ($i=0; $i<count($meta_query); $i++) {
+		for ($i = 0; $i < count($meta_query); $i++) {
 			if (!is_array($meta_query[$i]) || !isset($meta_query[$i]['key']) || !isset($meta_query[$i]['value'])) {
 				continue;
 			}
@@ -167,7 +181,12 @@ abstract class Geo
 		return $wpdb->get_results($sql);
 	}
 
-	public static function get_user_ip()
+	/**
+	 * Attempt to get the IP address of the current visitor
+	 *
+	 * @return string
+	 */
+	public static function get_user_ip(): string
 	{
 		if (isset($_SERVER['HTTP_CLIENT_IP'])) {
 			$client_ip = $_SERVER['HTTP_CLIENT_IP'];

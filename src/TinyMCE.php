@@ -3,7 +3,14 @@ namespace WPUtil;
 
 abstract class TinyMCE
 {
-	public static function add_formats($formats, $merge_formats = true)
+	/**
+	 * Add formatting options to the TinyMCE formats menu
+	 *
+	 * @param array $formats
+	 * @param boolean $merge_formats
+	 * @return void
+	 */
+	public static function add_formats(array $formats, bool $merge_formats = true): void
 	{
 		add_filter('tiny_mce_before_init', function($init_array) use (&$formats, &$merge_formats) {
 			/*
@@ -23,7 +30,13 @@ abstract class TinyMCE
 		});
 	}
 
-	public static function set_options($options = array())
+	/**
+	 * Set the TinyMCE editor options
+	 *
+	 * @param array $options
+	 * @return void
+	 */
+	public static function set_options(array $options = []): void
 	{
 		add_filter('tiny_mce_before_init', function($init_array) use (&$options) {
 			return array_merge($init_array, $options);

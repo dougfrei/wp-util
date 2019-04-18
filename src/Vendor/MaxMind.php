@@ -4,27 +4,40 @@ namespace WPUtil\Vendor;
 abstract class MaxMind
 {
 	private static $remote_db = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz';
-	private static $record_cache = array();
+	private static $record_cache = [];
     private static $local_db = false;
 
-    public static $default_location = array(
+    public static $default_location = [
         'lat' => 0,
         'lng' => 0,
         'zip' => ''
-    );
+	];
 
-
-	public static function set_default_location($lat, $lng, $zip = '')\
+	/**
+	 * Set the default location for MaxMind requests
+	 *
+	 * @param float $lat
+	 * @param float $lng
+	 * @param string $zip
+	 * @return void
+	 */
+	public static function set_default_location(float $lat, float $lng, string $zip = ''): void
 	{
         self::$default_location['lat'] = $lat;
         self::$default_location['lng'] = $lng;
         self::$default_location['zip'] = $zip;
     }
 
-	public static function set_local_db($db_file)
+	/**
+	 * Set the local MaxMind DB file to use for requests
+	 *
+	 * @param string $db_file
+	 * @return string
+	 */
+	public static function set_local_db(string $db_file): string
 	{
         if (!is_string($db_file) || !file_exists($db_file)) {
-            return false;
+            return '';
         }
 
         self::$local_db = $db_file;
@@ -32,13 +45,20 @@ abstract class MaxMind
         return self::$local_db;
     }
 
-	public static function get_latlng_by_IP($ip)
+	/**
+	 * Get position information by IP address
+	 * Returns an object with 'lat', 'lng', and 'zip' properties
+	 *
+	 * @param string $ip
+	 * @return object
+	 */
+	public static function get_latlng_by_IP(string $ip): object
 	{
-        $ret_obj = (object)array(
+        $ret_obj = (object)[
 			'lat' => 0,
 			'lng' => 0,
 			'zip' => ''
-		);
+		];
 
     	$record = self::get_record_for_IP($ip);
 
@@ -56,7 +76,13 @@ abstract class MaxMind
     	return $ret_obj;
 	}
 
-	public static function get_zip_by_IP($ip)
+	/**
+	 * Get the zip code for an IP address
+	 *
+	 * @param string $ip
+	 * @return string
+	 */
+	public static function get_zip_by_IP(string $ip): string
 	{
 		$record = self::get_record_for_IP($ip);
 
@@ -67,7 +93,13 @@ abstract class MaxMind
 		return $record->postal->code ? $record->postal->code : self::$default_location['zip'];
 	}
 
-	public static function get_record_for_IP($ip)
+	/**
+	 * Get the raw MaxMind record for an IP address
+	 *
+	 * @param string $ip
+	 * @return bool|object
+	 */
+	public static function get_record_for_IP(string $ip)
 	{
 		if (!isset(self::$record_cache[$ip])) {
 			if (!self::$local_db) {

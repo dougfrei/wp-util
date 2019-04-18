@@ -5,7 +5,12 @@ abstract class ServerTiming
 {
 	static private $proc = [];
 
-	static public function init()
+	/**
+	 * Add a 'Server-Timing' header that includes any created timings
+	 *
+	 * @return void
+	 */
+	static public function init(): void
 	{
 		$procs = &self::$proc;
 
@@ -27,7 +32,14 @@ abstract class ServerTiming
 		}, 9999);
 	}
 
-	static public function start($name, $title = '')
+	/**
+	 * Start a timing
+	 *
+	 * @param string $name
+	 * @param string $title
+	 * @return void
+	 */
+	static public function start(string $name, string $title = ''): void
 	{
 		$key = sanitize_title($name);
 
@@ -42,7 +54,13 @@ abstract class ServerTiming
 		];
 	}
 
-	static public function stop($name)
+	/**
+	 * End a timing
+	 *
+	 * @param string $name
+	 * @return float
+	 */
+	static public function stop(string $name): float
 	{
 		$key = sanitize_title($name);
 

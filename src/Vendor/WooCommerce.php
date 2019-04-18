@@ -6,10 +6,10 @@ abstract class WooCommerce
 	/**
 	 * Add theme support for WooCommerce
 	 *
-	 * @since 2017.01.11
-	 * @author DF
+	 * @return void
 	 */
-	public static function add_theme_support() {
+	public static function add_theme_support(): void
+	{
 		add_action('after_setup_theme', function() {
 			add_theme_support('woocommerce');
 		});
@@ -20,11 +20,10 @@ abstract class WooCommerce
 	 *
 	 * @param  string $openHTML  the open wrapper HTML
 	 * @param  string $closeHTML the close wrapper HTML
-	 *
-	 * @since 2017.01.11
-	 * @author DF
+	 * @return void
 	 */
-	public static function modify_woocommerce_wrapper($openHTML, $closeHTML) {
+	public static function modify_woocommerce_wrapper(string $openHTML, string $closeHTML): void
+	{
 		remove_action('woocommerce_before_main_content', 'woocommerce_output_content_wrapper', 10);
 		remove_action('woocommerce_after_main_content', 'woocommerce_output_content_wrapper_end', 10);
 
@@ -42,31 +41,34 @@ abstract class WooCommerce
 	 *
 	 * @param int 	$post_id 	post id that will have admin fields added to it
 	 * @param array $fields 	array of fields to add
-	 *
-	 * @since 2017.03.08
-	 * @author DF
+	 * @return void
 	 */
-	public static function display_wc_fields($post_id, $fields=array()) {
+	public static function display_wc_fields(int $post_id, array $fields = []): void
+	{
 		foreach ($fields as $field) {
-			$base_values = array(
+			$base_values = [
 				'id' => $field['id'].'['.$post_id.']',
 				'label' => $field['label'],
 				'desc_tip' => isset($field['description']) ? true : false,
-				'description' => isset($field['description']) ? $field['description'] : '',
+				'description' => $field['description'] ?? '',
 				'value' => get_post_meta($post_id, $field['id'], true)
-			);
+			];
 
 			switch ($field['type']) {
 				case 'textarea':
-					\woocommerce_wp_textarea_input(array_merge($base_values, array(
-						'placeholder' => isset($field['placeholder']) ? $field['placeholder'] : '',
-					)));
+					\woocommerce_wp_textarea_input(
+						array_merge($base_values, [
+							'placeholder' => $field['placeholder'] ?? ''
+						])
+					);
 					break;
 
 				case 'select':
-					\woocommerce_wp_select(array_merge($base_values, array(
-						'options' => isset($field['options']) ? $field['options'] : '',
-					)));
+					\woocommerce_wp_select(
+						array_merge($base_values, [
+							'options' => $field['options'] ?? '',
+						])
+					);
 					break;
 
 				case 'checkbox':
@@ -83,9 +85,11 @@ abstract class WooCommerce
 
 				case 'text':
 				default:
-					\woocommerce_wp_text_input(array_merge($base_values, array(
-						'placeholder' => isset($field['placeholder']) ? $field['placeholder'] : '',
-					)));
+					\woocommerce_wp_text_input(
+						array_merge($base_values, [
+							'placeholder' => $field['placeholder'] ?? '',
+						])
+					);
 					break;
 			}
 		}
@@ -96,11 +100,10 @@ abstract class WooCommerce
 	 *
 	 * @param int 	$post_id 	post id that will have additional admin fields saved
 	 * @param array $fields 	array of fields to save
-	 *
-	 * @since 2017.03.08
-	 * @author DF
+	 * @return void
 	 */
-	public static function save_wc_fields($post_id, $fields=array()) {
+	public static function save_wc_fields(int $post_id, array $fields = []): void
+	{
 		foreach ($fields as $field) {
 			switch ($field['type']) {
 				case 'checkbox':
@@ -111,9 +114,11 @@ abstract class WooCommerce
 
 				default:
 					$data = $_POST[$field['id']][$post_id];
+					
 					if (!empty($data)) {
 						update_post_meta($post_id, $field['id'], esc_attr($data));
 					}
+
 					break;
 			}
 		}
@@ -123,20 +128,19 @@ abstract class WooCommerce
 	 * Add custom product fields
 	 *
 	 * @param array $fields array of fields to add
-	 *
-	 * @since 2017.03.09
-	 * @author DF
+	 * @throws Exception
+	 * @return void
 	 */
-	public static function add_product_fields($fields=array()) {
-
+	public static function add_product_fields(array $fields = []): void
+	{
 		foreach ($fields as &$field) {
 			if (!is_array($field)) {
-				throw new Exception(__CLASS__.'::'.__METHOD__.' - fields must be arrays');
+				throw new Exception(__METHOD__.' - fields must be arrays');
 			}
 
 			// FIXME: don't check for labels on hidden input types
 			if (!isset($field['id']) || !isset($field['label']) || !isset($field['type'])) {
-				throw new Exception(__CLASS__.'::'.__METHOD__.' - fields must contain "id", "label", and "type" values');
+				throw new Exception(__METHOD__.' - fields must contain "id", "label", and "type" values');
 			}
 		}
 
@@ -156,20 +160,19 @@ abstract class WooCommerce
 	 * Add custom product variation fields
 	 *
 	 * @param array $fields array of fields to add
-	 *
-	 * @since 2017.02.17
-	 * @author DF
+	 * @throws Exception
+	 * @return void
 	 */
-	public static function add_product_variation_fields($fields=array()) {
-
+	public static function add_product_variation_fields(array $fields = []): void
+	{
 		foreach ($fields as &$field) {
 			if (!is_array($field)) {
-				throw new Exception(__CLASS__.'::'.__METHOD__.' - fields must be arrays');
+				throw new Exception(__METHOD__.' - fields must be arrays');
 			}
 
 			// FIXME: don't check for labels on hidden input types
 			if (!isset($field['id']) || !isset($field['label']) || !isset($field['type'])) {
-				throw new Exception(__CLASS__.'::'.__METHOD__.' - fields must contain "id", "label", and "type" values');
+				throw new Exception(__METHOD__.' - fields must contain "id", "label", and "type" values');
 			}
 		}
 
@@ -191,11 +194,10 @@ abstract class WooCommerce
 	 *
 	 * @param int 		$post_id 		post id to pull the value from
 	 * @param string 	$field_name 	the variation field name
-	 *
-	 * @since 2017.03.08
-	 * @author DF
+	 * @return mixed
 	 */
-	public static function get_product_variation_field($post_id, $field_name) {
+	public static function get_product_variation_field(int $post_id, string $field_name)
+	{
 		return get_post_meta($post_id, $field_name, true);
 	}
 
@@ -203,31 +205,25 @@ abstract class WooCommerce
 	 * Return the permalink for a WooCommerce page
 	 * 
 	 * @param string	$page	page name to get the permalink for
-	 * 
 	 * @return string	the permalink
-	 * 
-	 * @since 2018.01.21
-	 * @author DF
 	 */
-	public static function get_page_permalink($page) {
+	public static function get_page_permalink(string $page_name): string
+	{
 		if (!function_exists('wc_get_page_id')) {
 			return '';
 		}
 
-		return get_the_permalink(\wc_get_page_id($page));
+		return get_the_permalink(\wc_get_page_id($page_name));
 	}
 
 	/**
 	 * Get an attribute taxonomy name
 	 * 
 	 * @param string	$name	taxonomy name (ex: color)
-	 * 
 	 * @return string	the taxonomy term name (ex: pa_color)
-	 * 
-	 * @since 2018.01.21
-	 * @author DF
 	 */
-	public static function get_attribute_taxonomy_name($name) {
+	public static function get_attribute_taxonomy_name(string $name): string
+	{
 		$wc_attribute_taxonomies = \wc_get_attribute_taxonomies();
 
 		if (!$wc_attribute_taxonomies) {

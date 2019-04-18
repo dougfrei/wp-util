@@ -3,10 +3,16 @@ namespace WPUtil\Dev;
 
 abstract class Benchmark
 {
-	protected static $timings = array();
+	protected static $timings = [];
 
-
-	public static function get_microtime($func, ...$params)
+	/**
+	 * Benchmark the execution time of a function
+	 *
+	 * @param callable $func
+	 * @param mixed ...$params
+	 * @return float
+	 */
+	public static function get_microtime(callable $func, ...$params): float
 	{
 		$time_start = microtime(true);
 
@@ -17,12 +23,25 @@ abstract class Benchmark
 		return (float)$time_end - (float)$time_start;
 	}
 
-	public static function start($timing_id)
+	/**
+	 * Start a benchmark timing
+	 *
+	 * @param string $timing_id
+	 * @return void
+	 */
+	public static function start(string $timing_id): void
 	{
-		self::$timings[$timing_id] = array('start' => (float)microtime(true), 'stop' => '');
+		self::$timings[$timing_id] = ['start' => (float)microtime(true), 'stop' => ''];
 	}
 
-	public static function stop($timing_id, $to_error_log = true)
+	/**
+	 * End a benchmark timing
+	 *
+	 * @param string $timing_id
+	 * @param boolean $to_error_log
+	 * @return float
+	 */
+	public static function stop(string $timing_id, bool $to_error_log = true): float
 	{
 		if (!isset(self::$timings[$timing_id])) {
 			return false;

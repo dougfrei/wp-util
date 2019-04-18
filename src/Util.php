@@ -3,7 +3,14 @@ namespace WPUtil;
 
 abstract class Util
 {
-	public static function strip_specific_tags($str, $tags)
+	/**
+	 * Remove specific HTML tags from a string
+	 *
+	 * @param string $str
+	 * @param array $tags
+	 * @return string
+	 */
+	public static function strip_specific_tags(string $str, array $tags): string
 	{
 		foreach ($tags as $tag) {
 			$str = preg_replace('/<'.$tag.'[^>]*>/i', '', $str);
@@ -13,7 +20,15 @@ abstract class Util
 		return trim($str);
 	}
 
-	public static function include_all_files($path, $filter_func = false)
+	/**
+	 * 'include' all files within a path
+	 * optional filter function to exclude specific files
+	 *
+	 * @param string $path
+	 * @param callable $filter_func
+	 * @return void
+	 */
+	public static function include_all_files(string $path, callable $filter_func = null): void
 	{
 		$files = glob($path);
 		
@@ -22,18 +37,24 @@ abstract class Util
 				continue;
 			}
 
-			include_once($file);
+			include_once $file;
 		}
 	}
 
-	public static function autoflush_rewrite_rules()
+	/**
+	 * Register an 'init' hook to flush rewrite rules if the registered
+	 * CPTs or taxonomies have changed
+	 *
+	 * @return void
+	 */
+	public static function autoflush_rewrite_rules(): void
 	{
 		add_action('init', function() {
-			$cpts = implode('', get_post_types()).implode('', get_taxonomies());
+			$cache = implode('', get_post_types()).implode('', get_taxonomies());
 			
-			if (get_option('grav_registered_post_types') != $cpts) {
+			if (get_option('wputil_registered_cpts_and_tax') !== $cache) {
 				flush_rewrite_rules();
-				update_option('grav_registered_post_types', $cpts);
+				update_option('wputil_registered_cpts_and_tax', $cache);
 			}
 		});
 	}

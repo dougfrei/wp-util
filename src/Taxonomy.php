@@ -3,7 +3,16 @@ namespace WPUtil;
 
 abstract class Taxonomy
 {
-	public static function register($label_single, $label_plural, $post_types, $options = array())
+	/**
+	 * Register a taxonomy using 'register_taxonomy'
+	 *
+	 * @param string $label_single
+	 * @param string $label_plural
+	 * @param string/array $post_types
+	 * @param array $options
+	 * @return void
+	 */
+	public static function register(string $label_single, string $label_plural, $post_types, array $options = []): void
 	{
 		$default_options = array(
 			'labels' => array(
@@ -31,7 +40,13 @@ abstract class Taxonomy
 		});
 	}
 
-	public static function remove($slug)
+	/**
+	 * Remove a taxonomy by slug name
+	 *
+	 * @param string $slug
+	 * @return void
+	 */
+	public static function remove(string $slug): void
 	{
 		$slugs = is_array($slug) ? $slug : array($slug);
 

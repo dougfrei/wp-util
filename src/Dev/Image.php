@@ -3,7 +3,14 @@ namespace WPUtil\Dev;
 
 abstract class Image
 {
-	public static function local_image_redirect($remote_domain)
+	/**
+	 * Rewrite image URLs to a different domain when they cannot be found locally
+	 * Uses the 'wp_get_attachment_url' and 'wp_calculate_image_srcset' filters
+	 *
+	 * @param string $remote_domain
+	 * @return void
+	 */
+	public static function local_image_redirect(string $remote_domain): void
 	{
 		// create function for the redirect as a variable so it can be used in the two filters below
 		$redirect_image = function($url) use (&$remote_domain) {

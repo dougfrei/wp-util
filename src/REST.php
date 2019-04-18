@@ -5,12 +5,11 @@ abstract class REST
 {
 	/**
 	 * Disable the specified REST endpoints
-	 * @param  array  $disable_endpoints array of endpoints to disable
 	 *
-	 * @since 2017.01.11
-	 * @author DF
+	 * @param array $disable_endpoints
+	 * @return void
 	 */
-	public static function disable_endpoints($disable_endpoints = array())
+	public static function disable_endpoints(array $disable_endpoints = []): void
 	{
 		add_filter('rest_endpoints', function($endpoints) use (&$disable_endpoints) {
 			foreach ($disable_endpoints as $disable_endpoint) {
@@ -26,22 +25,20 @@ abstract class REST
 	/**
 	 * Fixes an issue with oAuth failing because it believes URL's don't match when generating secrets during authorization.
 	 *
-	 * @since 2017.01.11
-	 * @author DF
+	 * @return void
 	 */
-	public static function fix_oauth_url_match_issue()
+	public static function fix_oauth_url_match_issue(): void
 	{
 		add_filter('rest_oauth.check_callback', create_function('$valid,$url,$consumer', 'return true;'), 10, 3);
 	}
 
 	/**
 	 * Restrict access to the REST API to authenticated users only
-	 * @param string $minimum_user_level The minimum user level to allow access for (default is 0)
 	 *
-	 * @since 2017.02.08
-	 * @author DF
+	 * @param integer $minimum_user_level The minimum user level to allow access for (default is 0)
+	 * @return void
 	 */
-	public static function restrict_to_authenticated_users($minimum_user_level = 0)
+	public static function restrict_to_authenticated_users(int $minimum_user_level = 0): void
 	{
 		add_filter('rest_authentication_errors', function($access) use (&$minimum_user_level) {
 			$cur_user = wp_get_current_user();
@@ -54,7 +51,14 @@ abstract class REST
 		});
 	}
 
-	public static function register_routes($namespace, $controllers)
+	/**
+	 * Register REST controllers for a namespace
+	 *
+	 * @param string $namespace
+	 * @param array $controllers
+	 * @return void
+	 */
+	public static function register_routes(string $namespace, array $controllers): void
 	{
 		add_action('rest_api_init', function() use ($namespace, $controllers) {
 			foreach ($controllers as $url => $controller) {

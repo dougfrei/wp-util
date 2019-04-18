@@ -3,12 +3,14 @@ namespace WPUtil;
 
 abstract class Plugins
 {
-	public static function force_activate_plugins($plugins=array())
+	/**
+	 * Force a list of plugins to be active if they aren't currently enabled
+	 *
+	 * @param array $plugins
+	 * @return void
+	 */
+	public static function force_activate_plugins(array $plugins): void
 	{
-		if (!$plugins) {
-			return;
-		}
-
 		add_action(is_admin() ? 'admin_init' : 'wp', function() use (&$plugins) {
 			if (!is_admin()) {
 				include_once (ABSPATH.'wp-admin/includes/plugin.php');
@@ -22,7 +24,13 @@ abstract class Plugins
 		});
 	}
 
-	public static function disallow_updates($plugins)
+	/**
+	 * Restrict a list of plugins from having the ability to be updated
+	 *
+	 * @param array $plugins
+	 * @return void
+	 */
+	public static function disallow_updates(array $plugins): void
 	{
 		add_filter('site_transient_update_plugins', function($value) use (&$plugins) {
 			foreach ($plugins as $plugin) {

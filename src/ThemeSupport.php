@@ -6,7 +6,14 @@ abstract class ThemeSupport
 	static public $support_items = array();
     static private $hook_registered = false;
 
-	static public function add($name, $params = '')
+	/**
+	 * Add an 'add_theme_support' item to be run in the 'after_setup_theme' hook
+	 *
+	 * @param string $name
+	 * @param mixed $params
+	 * @return void
+	 */
+	static public function add(string $name, $params = ''): void
 	{
 		self::$support_items[$name] = $params;
 
@@ -25,7 +32,15 @@ abstract class ThemeSupport
         }
     }
 
-	public static function post_thumbnails($width = 300, $height = 300, $crop = true)
+	/**
+	 * Configure the post thumbnail dimensions
+	 *
+	 * @param integer $width
+	 * @param integer $height
+	 * @param boolean $crop
+	 * @return void
+	 */
+	public static function post_thumbnails(int $width, int $height, bool $crop = true): void
 	{
 		add_action('after_setup_theme', function() use (&$width, &$height, &$crop) {
 			add_theme_support('post-thumbnails');
@@ -33,7 +48,17 @@ abstract class ThemeSupport
 		});
 	}
 
-	public static function image_sizes($sizes)
+	/**
+	 * Set image sizes
+	 * $sizes must be a key/value array with each item being an array containing the following keys
+	 *     'width' (int)
+	 *     'height' (int)
+	 *     'crop' (bool)
+	 *
+	 * @param array $sizes
+	 * @return void
+	 */
+	public static function image_sizes(array $sizes): void
 	{
 		if (!is_array($sizes)) {
 			return;
@@ -54,7 +79,15 @@ abstract class ThemeSupport
 		});
 	}
 
-	public static function automatic_feed_links($opts=array())
+	/**
+	 * Enable automatic feed links (RSS) in the wp_head() call
+	 * Options:
+	 *     'disable_comments_feed' (boolean) - will prevent the comments feed from being included
+	 *
+	 * @param array $opts
+	 * @return void
+	 */
+	public static function automatic_feed_links(array $opts = []): void
 	{
 		add_action('after_setup_theme', function() use (&$opts) {
 			add_theme_support('automatic-feed-links');
@@ -65,14 +98,25 @@ abstract class ThemeSupport
 		});
 	}
 
-	public static function custom_logo()
+	/**
+	 * Add theme support for a custom logo
+	 *
+	 * @return void
+	 */
+	public static function custom_logo(): void
 	{
 		add_action('after_setup_theme', function() {
 			add_theme_support('custom-logo');
 		});
 	}
 
-	public static function register_menus($menus)
+	/**
+	 * Register custom menus using the 'register_nav_menus' function
+	 *
+	 * @param array $menus
+	 * @return void
+	 */
+	public static function register_menus(array $menus): void
 	{
 		add_action('after_setup_theme', function() use (&$menus) {
 			add_theme_support('menus');

@@ -3,7 +3,19 @@ namespace WPUtil;
 
 abstract class Styles
 {
-	public static function enqueue_styles($styles)
+	/**
+	 * Enqueue an array of styles
+	 * Each item can have the following keys:
+	 *     'version' (string) - version for the style enqueue
+	 *     'url' (string) - URL of the CSS file to enqueue
+	 *     'deps' (array) - List of style handles that this enqueue depends on
+	 *     'preload_hook' (string) - An optional action hook name that will be used
+	 *         to output a '<link rel="preload" href="..." as="style">' tag
+	 *
+	 * @param array $styles
+	 * @return void
+	 */
+	public static function enqueue_styles(array $styles): void
 	{
 		foreach ($styles as &$style) {
 			// calculate versions for scripts if they are local files

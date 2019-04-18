@@ -6,10 +6,9 @@ abstract class Performance
 	/**
 	 * Remove emojicon support
 	 *
-	 * @since 2017.01.20
-	 * @author DF
+	 * @return void
 	 */
-	public static function remove_emojicon_support()
+	public static function remove_emojicon_support(): void
 	{
 		add_action('init', function() {
 			// all actions related to emojis
@@ -36,12 +35,11 @@ abstract class Performance
 	}
 
 	/**
-	 * Remove jquery-migrate script
+	 * Remove the jquery-migrate script
 	 *
-	 * @since 2017.01.04
-	 * @author DF
+	 * @return void
 	 */
-	public static function remove_jquery_migrate()
+	public static function remove_jquery_migrate(): void
 	{
 		add_filter('wp_default_scripts', function(&$scripts) {
 			if (!is_admin()) {
@@ -52,12 +50,11 @@ abstract class Performance
 	}
 
 	/**
-	 * Move jQuery script include to the footer
+	 * Move the jQuery script include to the footer
 	 *
-	 * @since 2017.03.27
-	 * @author DF
+	 * @return void
 	 */
-	public static function move_jquery_to_footer()
+	public static function move_jquery_to_footer(): void
 	{
 		add_action('wp_enqueue_scripts', function() {
 			if (is_admin()) {
@@ -72,12 +69,15 @@ abstract class Performance
 		}, 0);
 	}
 
-	public static function defer_styles($styles, $debug = false)
+	/**
+	 * Defer a list of style handlers to load on the DOMContentLoaded event
+	 *
+	 * @param array $styles
+	 * @param boolean $debug
+	 * @return void
+	 */
+	public static function defer_styles(array $styles, bool $debug = false)
 	{
-		if (!is_array($styles)) {
-			$styles = array($styles);
-		}
-
 		add_filter('style_loader_tag', function($tag, $handle) use (&$styles, &$debug) {
 			if (in_array($handle, $styles)) {
 				$xml = simplexml_load_string($tag);
@@ -114,12 +114,14 @@ abstract class Performance
 		}, 10, 2);
 	}
 
-	public static function inline_styles($styles)
+	/**
+	 * Output a list of style handlers as inline styles
+	 *
+	 * @param array $styles
+	 * @return void
+	 */
+	public static function inline_styles(array $styles): void
 	{
-		if (!is_array($styles)) {
-			$styles = array($styles);
-		}
-
 		add_filter('style_loader_tag', function($tag, $handle) use (&$styles) {
 			if (in_array($handle, $styles)) {
 				$xml = simplexml_load_string($tag);
@@ -127,8 +129,6 @@ abstract class Performance
 
 				if (is_array($list) && count($list)) {
 					$url_parts = parse_url($list[0]);
-					$url = $url_parts['scheme'].'://'.$url_parts['host'].'/'.$url_parts['path'];
-
 					$local_file = ABSPATH.$url_parts['path'];
 
 					if (file_exists($local_file)) {
@@ -141,7 +141,13 @@ abstract class Performance
 		}, 10, 2);
 	}
 
-	public static function defer_scripts($script_handles=array())
+	/**
+	 * Add the 'defer' attribute to a list of script handles
+	 *
+	 * @param array $script_handles
+	 * @return void
+	 */
+	public static function defer_scripts(array $script_handles): void
 	{
 		if (is_admin()) {
 			return;
@@ -163,7 +169,14 @@ abstract class Performance
 		}, 10, 2);
 	}
 
-	public static function append_script_after_load($name, $url)
+	/**
+	 * Append a script to the DOM after the DOMContentLoaded event has fired
+	 *
+	 * @param string $name
+	 * @param string $url
+	 * @return void
+	 */
+	public static function append_script_after_load(string $name, string $url): void
 	{
 		$name = esc_attr($name);
 		$url = esc_url($url);
