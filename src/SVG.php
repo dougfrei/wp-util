@@ -127,6 +127,10 @@ abstract class SVG
 
 		$dom = self::get_svg_domdocument($filename);
 
+		if ($dom === null) {
+			return '';
+		}
+
 		$svg_node = $dom->documentElement;
 		
 		$add_class = $opts['class'] ?? '';
@@ -169,6 +173,11 @@ abstract class SVG
 
 			$attrs = [];
 			$dom = self::get_svg_domdocument($filename);
+
+			if ($dom === null) {
+				return '';
+			}
+
 			$svg_node = $dom->documentElement;
 
 			if ($svg_node->hasAttributes()) {
@@ -240,8 +249,12 @@ abstract class SVG
 	 * @param string $filename
 	 * @return \DOMDocument
 	 */
-	protected static function get_svg_domdocument(string $filename): \DOMDocument
+	protected static function get_svg_domdocument(string $filename)
 	{
+		if (!file_exists($filename)) {
+			return null;
+		}
+
 		$clean_markup = self::clean_markup(file_get_contents($filename));
 
 		libxml_use_internal_errors(true);
