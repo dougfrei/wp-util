@@ -156,6 +156,7 @@ abstract class SVG
 		// add the wp_footer hook if needed
 		if (!self::$use_hook_added) {
 			add_action('wp_footer', [__CLASS__, 'use_reference_hook']);
+			add_action('admin_footer', [__CLASS__, 'use_reference_hook']);
 			self::$use_hook_added = true;
 		}
 
@@ -303,24 +304,28 @@ abstract class SVG
 			$svg_path = trailingslashit($svg_path.$sub_dir);
 		}
 
-		$dir_iterator = new \RecursiveDirectoryIterator($svg_path, \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO);
-		$iterator = new \RecursiveIteratorIterator($dir_iterator, \RecursiveIteratorIterator::SELF_FIRST);
-
-		foreach ($iterator as $file) {
-			if (stripos($file, '.svg') === false) {
-				continue;
+		try {
+			$dir_iterator = new \RecursiveDirectoryIterator($svg_path, \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO);
+			$iterator = new \RecursiveIteratorIterator($dir_iterator, \RecursiveIteratorIterator::SELF_FIRST);
+	
+			foreach ($iterator as $file) {
+				if (stripos($file, '.svg') === false) {
+					continue;
+				}
+	
+				$svg_name = str_replace($svg_base_path, '', $file);
+				$label = $label_includes_dir ? str_replace('.svg', '', $svg_name) : basename($svg_name, '.svg');
+				$label = str_replace('/', ' / ', $label);
+				$label = str_replace(['-', '_'], ' ', $label);
+				$label = ucwords($label);
+	
+				$svg_list[] = [
+					'label' => $label,
+					'name' => str_replace('.svg', '', $svg_name)
+				];
 			}
-
-			$svg_name = str_replace($svg_base_path, '', $file);
-			$label = $label_includes_dir ? str_replace('.svg', '', $svg_name) : basename($svg_name, '.svg');
-			$label = str_replace('/', ' / ', $label);
-			$label = str_replace(['-', '_'], ' ', $label);
-			$label = ucwords($label);
-
-			$svg_list[] = [
-				'label' => $label,
-				'name' => str_replace('.svg', '', $svg_name)
-			];
+		} catch (\Exception $e) {
+			error_log(__METHOD__.' - unable to read from path: '.$svg_path);
 		}
 
 		return $svg_list;
