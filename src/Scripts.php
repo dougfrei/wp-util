@@ -47,8 +47,8 @@ abstract class Scripts
 				if (isset($script['version'])) {
 					$url .= '?ver='.$script['version'];
 				}
-				
-				add_action($script['preload_hook'], function() use (&$url) {
+
+				add_action($script['preload_hook'], function() use ($url) {
 					echo '<link rel="preload" href="'.$url.'" as="script">'."\n";
 				});
 			}
