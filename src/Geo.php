@@ -126,6 +126,9 @@ abstract class Geo
 		$from = (!empty($args['from']) ? esc_sql($args['from']) : 0);
 		$limit = (!empty($args['limit']) ? esc_sql($args['limit']) : 999999);
 		$meta_query = (!empty($args['meta_query'])) ? $args['meta_query'] : [];
+		$post_not_in = isset($args['post__not_in']) && is_array($args['post__not_in']) ? array_filter($args['post__not_in'], function ($post_id) {
+			return is_int($post_id) && $post_id > 0;
+		}) : [];
 
 		if (is_array($from_location)) {
 			if (isset($args['from_location']['latitude'])) {
@@ -161,6 +164,15 @@ abstract class Geo
 			"distance >= {$from}",
 		);
 
+		$where_and_clauses = array(
+			"post_type = '{$post_type}'",
+			"post_status = 'publish'"
+		);
+
+		if ($post_not_in) {
+			$where_and_clauses[] = "{$wpdb->posts}.ID NOT IN (" . implode(',', $post_not_in) . ')';
+		}
+
 		// add meta query clauses
 		for ($i = 0; $i < count($meta_query); $i++) {
 			if (!is_array($meta_query[$i]) || !isset($meta_query[$i]['key']) || !isset($meta_query[$i]['value'])) {
@@ -176,7 +188,7 @@ abstract class Geo
 			$where_having_clauses[] = "{$key} {$compare} {$value}";
 		}
 
-		$sql = "SELECT ".implode(', ', $select_clauses)." FROM {$wpdb->posts} ".implode(' ', $join_clauses)." WHERE post_type = '{$post_type}' AND post_status = 'publish' HAVING ".implode(' AND ', $where_having_clauses)." ORDER BY distance LIMIT {$limit}";
+		$sql = "SELECT ".implode(', ', $select_clauses)." FROM {$wpdb->posts} ".implode(' ', $join_clauses)." WHERE " . implode(' AND ', $where_and_clauses) . " HAVING ".implode(' AND ', $where_having_clauses)." ORDER BY distance LIMIT {$limit}";
 
 		return $wpdb->get_results($sql);
 	}

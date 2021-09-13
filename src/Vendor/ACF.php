@@ -105,7 +105,8 @@ abstract class ACF
 	{
 		$opts = array_merge([
 			'format_value' => true,
-			'default' => ''
+			'default' => '',
+			'trim' => true
 		], $opts);
 
 		if (!is_string($opts['default'])) {
@@ -118,7 +119,11 @@ abstract class ACF
 
 		$value = get_field($selector, $post_id, $opts['format_value']);
 
-		return strval($value) ? $value : $opts['default'];
+		if (!strval($value)) {
+			return $opts['default'];
+		}
+
+		return $opts['trim'] ? trim($value) : $value;
 	}
 
 	/**
