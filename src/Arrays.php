@@ -61,7 +61,11 @@ abstract class Arrays
 	 */
 	public static function get_value_as_int(array $values, string $key, $default = 0): int
 	{
-		return isset($values[$key]) ? intval($values[$key]) : (is_callable($default) ? $default() : $default);
+		if (!isset($values[$key])) {
+			return is_callable($default) ? $default() : $default;
+		}
+
+		return intval($values[$key]);
 	}
 
 	/**
