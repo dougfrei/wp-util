@@ -106,7 +106,8 @@ abstract class ACF
 		$opts = array_merge([
 			'format_value' => true,
 			'default' => '',
-			'trim' => true
+			'trim' => true,
+			'allow_empty' => true
 		], $opts);
 
 		if (!is_string($opts['default'])) {
@@ -117,13 +118,17 @@ abstract class ACF
 			return $opts['default'];
 		}
 
-		$value = get_field($selector, $post_id, $opts['format_value']);
+		$value = strval(get_field($selector, $post_id, $opts['format_value']));
 
-		if (!strval($value)) {
+		if ($opts['trim']) {
+			$value = trim($value);
+		}
+
+		if (!$opts['allow_empty'] && !$value) {
 			return $opts['default'];
 		}
 
-		return $opts['trim'] ? trim($value) : $value;
+		return $value;
 	}
 
 	/**
@@ -224,7 +229,9 @@ abstract class ACF
 	{
 		$opts = array_merge([
 			'format_value' => true,
-			'default' => ''
+			'default' => '',
+			'trim' => true,
+			'allow_empty' => true
 		], $opts);
 
 		if (!is_string($opts['default'])) {
@@ -235,9 +242,17 @@ abstract class ACF
 			return $opts['default'];
 		}
 
-		$value = get_sub_field($selector, $opts['format_value']);
+		$value = strval(get_sub_field($selector, $opts['format_value']));
 
-		return strval($value) ? $value : $opts['default'];
+		if ($opts['trim']) {
+			$value = trim($value);
+		}
+
+		if (!$opts['allow_empty'] && !$value) {
+			return $opts['default'];
+		}
+
+		return $value;
 	}
 
 	/**
