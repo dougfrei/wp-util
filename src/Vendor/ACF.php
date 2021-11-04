@@ -156,6 +156,10 @@ abstract class ACF
 
 		$value = get_field($selector, $post_id, $opts['format_value']);
 
+		if (is_null($value)) {
+			return $opts['default'];
+		}
+
 		if (is_bool($value)) {
 			return $value ? 1 : 0;
 		}
@@ -278,6 +282,10 @@ abstract class ACF
 		}
 
 		$value = get_sub_field($selector, $opts['format_value']);
+
+		if (is_null($value)) {
+			return $opts['default'];
+		}
 
 		if (is_bool($value)) {
 			return $value ? 1 : 0;
