@@ -18,6 +18,14 @@ abstract class Arrays
 			return $trim ? trim($values[$key]) : $values[$key];
 		}
 
+		// NOTE: Check if the default value is a string and return it before checking
+		// if it is callable. If the string value is the name of an internal PHP
+		// function (ex: 'printf'), then is_callable will return true and cause an
+		// exception to be thrown.
+		if (is_string($default)) {
+			return $default;
+		}
+
 		return is_callable($default) ? $default() : $default;
 	}
 
