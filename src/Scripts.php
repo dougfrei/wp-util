@@ -1,6 +1,8 @@
 <?php
 namespace WPUtil;
 
+use WPUtil\Arrays;
+
 abstract class Scripts
 {
 	static $scripts = [];
@@ -31,22 +33,24 @@ abstract class Scripts
 		static::$has_run = true;
 
 		foreach (static::$scripts as $name => $params) {
-			if (!isset($params['url'])) {
-				continue;
-			}
+			$url = Arrays::get_value_as_string($params, 'url');
+			$deps = Arrays::get_value_as_array($params, 'deps');
+			$version = isset($params['version']) ? $params['version'] : null;
+			$in_footer = Arrays::get_value_as_bool($params, 'footer', false);
+			$use_async = Arrays::get_value_as_bool($params, 'async', false);
+			$use_defer = Arrays::get_value_as_bool($params, 'defer', false);
+			$localize = Arrays::get_value_as_array($params, 'localize');
+			$register_only = Arrays::get_value_as_bool($params, 'register_only', false);
 
-			if (!isset($params['deps']) || !is_array($params['deps'])) {
-				$params['deps'] = [];
+			if (!$url) {
+				continue;
 			}
 
 			$register_args = [];
 
-			if (isset($params['footer'])) {
-				$register_args['in_footer'] = boolval($params['footer']);
+			if ($in_footer) {
+				$register_args['in_footer'] = $in_footer;
 			}
-
-			$use_async = isset($params['async']) ? boolval($params['async']) : false;
-			$use_defer = isset($params['defer']) ? boolval($params['defer']) : false;
 
 			if ($use_async || $use_defer) {
 				$strategy = '';
@@ -65,13 +69,32 @@ abstract class Scripts
 				}
 			}
 
-			wp_register_script($name, $params['url'], $params['deps'], $params['version'], $register_args);
+			wp_register_script(
+				$name,
+				$url,
+				$deps,
+				is_null($version) ? null : strval($version),
+				$register_args
+			);
 
-			if (isset($params['localize'])) {
-				wp_localize_script($name, $params['localize']['name'], $params['localize']['data']);
+			if ($localize) {
+				$localize_name = Arrays::get_value_as_string($localize, 'name');
+				$localize_data = Arrays::get_value_as_array($localize, 'data', function () use ($localize, $name) {
+					trigger_error('The "data" value of the "localize" parameter for script "' . $name . '" should be a key/value array', E_USER_WARNING);
+
+					return isset($localize['data']) ? [ $localize['data'] ] : [];
+				});
+
+				if ($localize_name && $localize_data) {
+					wp_localize_script(
+						$name,
+						$localize_name,
+						$localize_data
+					);
+				}
 			}
 
-			if (isset($params['register_only']) && $params['register_only']) {
+			if ($register_only) {
 				continue;
 			}
 
@@ -117,24 +140,35 @@ abstract class Scripts
 	public static function _wp_footer()
 	{
 		foreach (static::$footer_scripts as $params) {
-			if (!isset($params['url'])) {
+			$url = Arrays::get_value_as_string($params, 'url');
+			$version = isset($params['version']) ? $params['version'] : null;
+			$use_async = Arrays::get_value_as_bool($params, 'async', false);
+			$use_defer = Arrays::get_value_as_bool($params, 'defer', false);
+			$localize = Arrays::get_value_as_array($params, 'localize');
+
+			if (!$url) {
 				continue;
 			}
 
-			if (isset($params['localize']) && isset($params['localize']['name']) && isset($params['localize']['data'])) {
-				?>
-				<script type="text/javascript">
-				var <?php $params['localize']['name'] ?> = <?php echo json_encode($params['localize']['data']); ?>;
-				</script>
-				<?php
+			if ($localize) {
+				$localize_name = Arrays::get_value_as_string($localize, 'name');
+				$localize_data = Arrays::get_value_as_string($localize, 'data');
+
+				if ($localize_name && $localize_data) {
+					?>
+					<script type="text/javascript">
+					var <?php $localize_name; ?> = <?php echo json_encode($localize_data); ?>;
+					</script>
+					<?php
+				}
 			}
 
-			if (isset($params['version']) && $params['version']) {
-				$join_char = (stripos($params['url'], '?') !== false) ? '&' : '?';
-				$params['url'] .= $join_char.'ver='.$params['version'];
+			if ($version) {
+				$join_char = (stripos($url, '?') !== false) ? '&' : '?';
+				$url .= $join_char . 'ver=' . strval($version);
 			}
 
-			$attrs_str = 'src=" ' . esc_url($params['url']) . '"';
+			$attrs_str = 'src=" ' . esc_url($url) . '"';
 
 			$type = isset($params['type']) && is_string($params['type']) ? trim($params['type']) : '';
 
@@ -146,11 +180,12 @@ abstract class Scripts
 				$attrs_str .= ' nomodule';
 			}
 
-			if (isset($params['async']) && $params['async']) {
+			if ($use_async && $use_defer) {
+				trigger_error('Both the "defer" and "async" properties are enabled for footer script "' . $url . '". Only "defer" will be used.', E_USER_WARNING);
+				$attrs_str .= ' defer';
+			} else if ($use_async) {
 				$attrs_str .= ' async';
-			}
-
-			if (isset($params['defer']) && $params['defer']) {
+			} else if ($use_defer) {
 				$attrs_str .= ' defer';
 			}
 
