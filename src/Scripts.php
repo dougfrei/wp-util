@@ -35,10 +35,37 @@ abstract class Scripts
 				continue;
 			}
 
-			if (!isset($params['deps'])) $params['deps'] = array();
-			if (!isset($params['footer'])) $params['footer'] = true;
+			if (!isset($params['deps']) || !is_array($params['deps'])) {
+				$params['deps'] = [];
+			}
 
-			wp_register_script($name, $params['url'], $params['deps'], $params['version'], $params['footer']);
+			$register_args = [];
+
+			if (isset($params['footer'])) {
+				$register_args['in_footer'] = boolval($params['footer']);
+			}
+
+			$use_async = isset($params['async']) ? boolval($params['async']) : false;
+			$use_defer = isset($params['defer']) ? boolval($params['defer']) : false;
+
+			if ($use_async || $use_defer) {
+				$strategy = '';
+
+				if ($use_async && $use_defer) {
+					trigger_error('Both the "defer" and "async" properties are enabled for script "' . $name . '". Only "defer" will be used.', E_USER_WARNING);
+					$strategy = 'defer';
+				} else if ($use_async) {
+					$strategy = 'async';
+				} else if ($use_defer) {
+					$strategy = 'defer';
+				}
+
+				if ($strategy) {
+					$register_args['strategy'] = $strategy;
+				}
+			}
+
+			wp_register_script($name, $params['url'], $params['deps'], $params['version'], $register_args);
 
 			if (isset($params['localize'])) {
 				wp_localize_script($name, $params['localize']['name'], $params['localize']['data']);
@@ -60,18 +87,22 @@ abstract class Scripts
 	 */
 	public static function _script_loader_tag(string $tag, string $handle): string
 	{
-		$attrs = array();
+		$attrs = [];
 
-		if (isset(static::$scripts[$handle]['async']) && static::$scripts[$handle]['async']) {
-			$attrs[] = 'async';
+		if (isset(static::$scripts[$handle]['type']) && is_string(static::$scripts[$handle]['type'])) {
+			if (function_exists('current_theme_supports') && !current_theme_supports('html5', 'script')) {
+				trigger_error("HTML5 support for scripts must be declared using \"add_theme_support('html5', ['script'])\" before a script 'type' can be specified.", E_USER_NOTICE);
+			} else {
+				$attrs[] = 'type="' . esc_attr(static::$scripts[$handle]['type']) . '"';
+			}
 		}
 
-		if (isset(static::$scripts[$handle]['defer']) && static::$scripts[$handle]['defer']) {
-			$attrs[] = 'defer';
+		if (isset(static::$scripts[$handle]['nomodule']) && static::$scripts[$handle]['nomodule']) {
+			$attrs[] = 'nomodule';
 		}
 
 		if ($attrs) {
-			$tag = str_replace(' src', ' '.implode(' ', $attrs).' src', $tag);
+			$tag = str_replace(' src', ' ' . implode(' ', $attrs) . ' src', $tag);
 		}
 
 		return $tag;
@@ -103,7 +134,17 @@ abstract class Scripts
 				$params['url'] .= $join_char.'ver='.$params['version'];
 			}
 
-			$attrs_str = 'type="text/javascript" src="'.$params['url'].'"';
+			$attrs_str = 'src=" ' . esc_url($params['url']) . '"';
+
+			$type = isset($params['type']) && is_string($params['type']) ? trim($params['type']) : '';
+
+			if ($type) {
+				$attrs_str = ' type="' . esc_attr($type) . '"';
+			}
+
+			if (isset($params['nomodule']) && $params['nomodule']) {
+				$attrs_str .= ' nomodule';
+			}
 
 			if (isset($params['async']) && $params['async']) {
 				$attrs_str .= ' async';
@@ -132,7 +173,7 @@ abstract class Scripts
 		// register all the scripts
 		add_action('wp_enqueue_scripts', [__CLASS__, '_wp_enqueue_scripts']);
 
-		// add defer/async attributes if they are specified
+		// add "type" and "nomodule" attributes if they are specified
 		add_filter('script_loader_tag', [__CLASS__, '_script_loader_tag'], 10, 2);
 
 		add_action('wp_footer', [__CLASS__, '_wp_footer'], static::$footer_scripts_priority);
@@ -175,11 +216,23 @@ abstract class Scripts
 				$url = $params['url'];
 
 				if (isset($params['version'])) {
-					$url .= '?ver='.$params['version'];
+					$url .= '?ver=' . $params['version'];
 				}
 
-				add_action($params['preload_hook'], function() use ($url) {
-					echo '<link rel="preload" href="'.$url.'" as="script">'."\n";
+				$crossorigin = isset($params['preload_crossorigin']) && is_string($params['preload_crossorigin']) ? $params['preload_crossorigin'] : '';
+
+				add_action($params['preload_hook'], function() use ($url, $crossorigin) {
+					$attrs = [
+						'rel="preload"',
+						'href="' . esc_url($url) . '"',
+						'as="script"'
+					];
+
+					if ($crossorigin) {
+						$attrs[] = 'crossorigin="' . esc_attr($crossorigin) . '"';
+					}
+
+					echo '<link ' . implode(' ', $attrs) . '>' . "\n";
 				});
 			}
 
@@ -203,7 +256,10 @@ abstract class Scripts
 	 *         The 'data' value will be encoded as JSON.
 	 *     'preload_hook' (string) - An optional action hook name that will be used
 	 *         to output a '<link rel="preload" href="..." as="script">' tag
+	 *     'preload_crossorigin' (string) - Value of the 'crossorigin' attribute used by the preload tag
 	 *     'register_only' (bool) - If true, the script will be registered but not enqueued
+	 *     'type' (string) - Add the 'type' attribute to the script tag with the provided value
+	 *     'nomodule' (bool) - Add the 'nomodule' attribute to the script tag
 	 *
 	 * @param array $scripts
 	 * @return void
@@ -232,6 +288,7 @@ abstract class Scripts
 	 *         The 'data' value will be encoded as JSON.
 	 *     'preload_hook' (string) - An optional action hook name that will be used
 	 *         to output a '<link rel="preload" href="..." as="script">' tag
+	 *     'preload_crossorigin' (string) - Value of the 'crossorigin' attribute used by the preload tag
 	 *
 	 * @param array $scripts
 	 * @return void
