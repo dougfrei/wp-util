@@ -12,7 +12,7 @@ abstract class TinyMCE
 	 */
 	public static function add_formats(array $formats, bool $merge_formats = true): void
 	{
-		add_filter('tiny_mce_before_init', function($init_array) use (&$formats, &$merge_formats) {
+		add_filter('tiny_mce_before_init', function ($init_array) use (&$formats, &$merge_formats) {
 			/*
 			* Each array child is a format with it's own settings
 			* Notice that each array has title, block, classes, and wrapper arguments
@@ -38,7 +38,7 @@ abstract class TinyMCE
 	 */
 	public static function set_options(array $options = []): void
 	{
-		add_filter('tiny_mce_before_init', function($init_array) use (&$options) {
+		add_filter('tiny_mce_before_init', function ($init_array) use (&$options) {
 			return array_merge($init_array, $options);
 		});
 	}
@@ -63,5 +63,19 @@ abstract class TinyMCE
 		add_filter('mce_buttons_2', $tinyMCEremoveToolbarItems, $filter_priority, 2);
 		add_filter('mce_buttons_3', $tinyMCEremoveToolbarItems, $filter_priority, 2);
 		add_filter('mce_buttons_4', $tinyMCEremoveToolbarItems, $filter_priority, 2);
+	}
+
+	/**
+	 * Add the specified stylesheet to the TinyMCE editor. This is a wrapper around
+	 * add_editor_style to ensure it's called during the correct hook.
+	 *
+	 * @param string|array $stylesheet
+	 * @return void
+	 */
+	public static function add_stylesheet($stylesheet)
+	{
+		add_action('admin_init', function () use (&$stylesheet) {
+			add_editor_style($stylesheet);
+		});
 	}
 }
