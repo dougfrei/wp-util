@@ -123,4 +123,25 @@ abstract class ThemeSupport
 			register_nav_menus($menus);
 		});
 	}
+
+	/**
+	 * Enable HTML5 markup output for the specified elements
+	 *
+	 * @param array<string> $items
+	 * @return void
+	 */
+	public static function enable_html5_markup(array $items = [
+		'comment-list',
+		'comment-form',
+		'search-form',
+		'gallery',
+		'caption',
+		'style',
+		'script'
+	]): void
+	{
+		add_action('after_setup_theme', function () use (&$items) {
+			add_theme_support('html5', $items);
+		});
+	}
 }
