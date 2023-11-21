@@ -42,4 +42,26 @@ abstract class TinyMCE
 			return array_merge($init_array, $options);
 		});
 	}
+
+	/**
+	 * Remove toolbar items from the TinyMCE by their string IDs.
+	 * Examples: "fontselect", "fontsizeselect", "forecolor"
+	 *
+	 * @param array<string> $toolbar_items
+	 * @param integer $filter_priority
+	 * @return void
+	 */
+	public static function remove_toolbar_items(array $toolbar_items, int $filter_priority = 999)
+	{
+		$tinyMCEremoveToolbarItems = fn (array $items, string $editor_id): array =>
+			array_filter(
+				$items,
+				fn ($item) => !in_array($item, $toolbar_items)
+			);
+
+		add_filter('mce_buttons', $tinyMCEremoveToolbarItems, $filter_priority, 2);
+		add_filter('mce_buttons_2', $tinyMCEremoveToolbarItems, $filter_priority, 2);
+		add_filter('mce_buttons_3', $tinyMCEremoveToolbarItems, $filter_priority, 2);
+		add_filter('mce_buttons_4', $tinyMCEremoveToolbarItems, $filter_priority, 2);
+	}
 }
